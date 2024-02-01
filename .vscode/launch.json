@@ -5,15 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "Debug Compiler",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "hello.c",
+                "test/hello.c",
                 "-o",
-                "hello.koopa"
+                "test/hello.koopa"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
