@@ -2,3 +2,4 @@ fun @main(): i32 {
 %entry:
   ret 0
 }
+

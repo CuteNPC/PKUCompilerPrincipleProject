@@ -1,4 +1,4 @@
-int hello() {
+int main() {
   // 忽略我的存在
-  return 7;
+  return 0;
 }

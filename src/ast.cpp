@@ -1,39 +1,44 @@
-#include <iostream>
 #include "ast.hpp"
 
-void CompUnitAST::Dump() const
+std::ostream &operator<<(std::ostream &outStream, const BaseAST &ast)
 {
-    std::cout << "CompUnitAST { ";
-    func_def->Dump();
-    std::cout << " }";
+    ast.Dump(outStream);
+    return outStream;
 }
 
-void FuncDefAST ::Dump() const
+void CompUnitAST::Dump(std::ostream &outStream = std::cout) const
 {
-    std::cout << "FuncDefAST { ";
-    func_type->Dump();
-    std::cout << ", " << ident << ", ";
-    block->Dump();
-    std::cout << " }";
+    outStream << "CompUnitAST { ";
+    func_def->Dump(outStream);
+    outStream << " }";
 }
 
-void FuncTypeAST ::Dump() const
+void FuncDefAST ::Dump(std::ostream &outStream = std::cout) const
 {
-    std::cout << "FuncTypeAST { ";
-    std::cout << type;
-    std::cout << " }";
+    outStream << "FuncDefAST { ";
+    func_type->Dump(outStream);
+    outStream << ", " << ident << ", ";
+    block->Dump(outStream);
+    outStream << " }";
 }
 
-void BlockAST ::Dump() const
+void FuncTypeAST ::Dump(std::ostream &outStream = std::cout) const
 {
-    std::cout << "BlockAST { ";
-    stmt->Dump();
-    std::cout << " }";
+    outStream << "FuncTypeAST { ";
+    outStream << "int";
+    outStream << " }";
 }
 
-void StmtAST ::Dump() const
+void BlockAST ::Dump(std::ostream &outStream = std::cout) const
 {
-    std::cout << "StmtAST { ";
-    std::cout << val;
-    std::cout << " }";
+    outStream << "BlockAST { ";
+    stmt->Dump(outStream);
+    outStream << " }";
+}
+
+void StmtAST ::Dump(std::ostream &outStream = std::cout) const
+{
+    outStream << "StmtAST { ";
+    outStream << val;
+    outStream << " }";
 }

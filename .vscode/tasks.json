@@ -7,6 +7,11 @@
             "label": "Makefile",
             "type": "shell",
             "command": "make"
+        },
+        {
+            "label": "AutoTest",
+            "type": "shell",
+            "command": "autotest -koopa -s lv1 /root/CompilerPrincipleProject"
         }
     ]
 }

@@ -76,7 +76,7 @@ FuncDef
     ast->func_type = unique_ptr<BaseAST>($1);
     ast->ident = *unique_ptr<string>($2);
     ast->block = unique_ptr<BaseAST>($5);
-    $$ = ast;
+    $$ = move(ast);
   }
   ;
 
@@ -84,8 +84,7 @@ FuncDef
 FuncType
   : INT {
     auto ast = new FuncTypeAST();
-    ast->type = string("int");
-    $$ = ast;
+    $$ = move(ast);
   }
   ;
 
@@ -93,7 +92,7 @@ Block
   : '{' Stmt '}' {
     auto ast = new BlockAST();
     ast->stmt = unique_ptr<BaseAST>($2);
-    $$ = ast;
+    $$ = move(ast);
   }
   ;
 
@@ -101,7 +100,7 @@ Stmt
   : RETURN Number ';' {
     auto ast = new StmtAST();
     ast->val = $2;
-    $$ = ast;
+    $$ = move(ast);
   }
   ;
 
@@ -116,5 +115,6 @@ Number
 // 定义错误处理函数, 其中第二个参数是错误信息
 // parser 如果发生错误 (例如输入的程序出现了语法错误), 就会调用这个函数
 void yyerror(unique_ptr<BaseAST> &ast, const char *s) {
-  ast->Dump();
+  cerr << "Call yyerror" << endl;
+  /* ast->Dump(cout); */
 }
