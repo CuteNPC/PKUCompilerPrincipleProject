@@ -11,9 +11,9 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "test/hello.c",
+                "test/lv3/27_complex_binary.c",
                 "-o",
-                "test/hello.koopa"
+                "playground/tmp.koopa"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

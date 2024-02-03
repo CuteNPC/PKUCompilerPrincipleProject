@@ -2,12 +2,12 @@
 #include <iostream>
 
 extern FILE *yyin;
-extern int yyparse(std::unique_ptr<BaseAST> &ast);
-extern std::unique_ptr<BaseAST> yyparse(FILE *file);
+extern int yyparse(CompUnitAST *&ast);
+extern CompUnitAST *yyparse(FILE *file);
 
-std::unique_ptr<BaseAST> yyparse(FILE *file)
+CompUnitAST *yyparse(FILE *file)
 {
-    std::unique_ptr<BaseAST> ast;
+    CompUnitAST *ast;
     yyin = file;
     int ret = yyparse(ast);
     if (ret)

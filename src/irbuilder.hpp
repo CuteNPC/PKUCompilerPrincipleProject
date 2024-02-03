@@ -2,25 +2,25 @@
 #define _IRBUILDER_HPP_
 
 #include "ast.hpp"
-#include "memory"
-#include <sstream>
-#include <iostream>
-#include <fstream>
 #include "koopa.h"
+#include "memory"
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 class IRBuilder
 {
-private:
+  private:
     /* data */
-    const BaseAST *ast;
+    CompUnitAST *ast;
     std::string funcName;
     int returnValue;
     std::string outString;
 
-public:
+  public:
     IRBuilder();
-    IRBuilder(const BaseAST &ast_);
-    void build(const BaseAST &ast_);
+    IRBuilder(CompUnitAST *ast_);
+    void build(CompUnitAST *ast_);
     std::string outputString();
 };
 

@@ -14,11 +14,15 @@ int main(int argc, const char *argv[])
 {
     Arg args(argc, argv);
 
-    std::unique_ptr<BaseAST> ast = yyparse(args.inputFile());
+    CompUnitAST *ast = yyparse(args.inputFile());
 
     std::cout << *ast << std::endl;
 
-    IRBuilder irBuilder(*ast);
+    return 0;
+
+    IRBuilder irBuilder(ast);
+
+    delete ast;
 
     std::string ir_string = irBuilder.outputString();
 

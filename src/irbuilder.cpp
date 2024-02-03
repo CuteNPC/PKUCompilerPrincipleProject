@@ -4,20 +4,13 @@ const static char emptyMainKoopaIRString[] = "fun @%s(): i32 {\n%%entry:\n  ret 
 
 IRBuilder::IRBuilder() {}
 
-IRBuilder::IRBuilder(const BaseAST &ast_)
-{
-    build(ast_);
-}
+IRBuilder::IRBuilder(CompUnitAST *ast_) { build(ast_); }
 
-void IRBuilder::build(const BaseAST &ast_)
+void IRBuilder::build(CompUnitAST *ast_)
 {
-    ast = &ast_;
-    const CompUnitAST *cuastp = (const CompUnitAST *)ast;
-    const FuncDefAST *fdastp = (const FuncDefAST *)(&*(cuastp->func_def));
-    funcName = fdastp->ident;
-    const BlockAST *bast = (const BlockAST *)(&*(fdastp->block));
-    const StmtAST *sast = (const StmtAST *)(&*(bast->stmt));
-    returnValue = sast->val;
+    ast = ast_;
+    funcName = ast->funcDef->funcName;
+    returnValue = ast->funcDef->funcBody->stmt->lOrExp->primaryExp->constVal;
 }
 
 std::string IRBuilder::outputString()

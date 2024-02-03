@@ -2,9 +2,6 @@
     "files.associations": {
         "*.f": "FortranFixedForm",
         "*.py": "python",
-        "string": "cpp",
-        "iostream": "cpp",
-        "memory": "cpp",
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
@@ -17,7 +14,7 @@
         "cstdint": "cpp",
         "cstdio": "cpp",
         "cstdlib": "cpp",
-        "cstring": "cpp",
+        "ctime": "cpp",
         "cwchar": "cpp",
         "cwctype": "cpp",
         "deque": "cpp",
@@ -27,10 +24,12 @@
         "algorithm": "cpp",
         "functional": "cpp",
         "iterator": "cpp",
+        "memory": "cpp",
         "memory_resource": "cpp",
         "numeric": "cpp",
         "optional": "cpp",
         "random": "cpp",
+        "string": "cpp",
         "string_view": "cpp",
         "system_error": "cpp",
         "tuple": "cpp",
@@ -38,7 +37,9 @@
         "utility": "cpp",
         "fstream": "cpp",
         "initializer_list": "cpp",
+        "iomanip": "cpp",
         "iosfwd": "cpp",
+        "iostream": "cpp",
         "istream": "cpp",
         "limits": "cpp",
         "new": "cpp",
@@ -47,7 +48,6 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "cinttypes": "cpp",
-        "typeinfo": "cpp",
-        "cassert": "cpp"
+        "typeinfo": "cpp"
     }
 }
