@@ -36,15 +36,18 @@ using namespace std;
   CompUnitAST   *CompUnitAST_ast_val;
   FuncDefAST    *FuncDefAST_ast_val;
   BlockAST      *BlockAST_ast_val;
+  BlockItemAST  *BlockItemAST_ast_val;
   StmtAST       *StmtAST_ast_val;
   ExpAST        *ExpAST_ast_val;
   PrimaryExpAST *PrimaryExpAST_ast_val;
+  DataDefAST    *DataDefAST_ast_val;
+  DataDeclAST   *DataDeclAST_ast_val;
   BaseAST       *BaseAST_ast_val;
 }
 
-%token <st_val>  Y_ST_PL Y_ST_PR Y_ST_SL Y_ST_SR Y_ST_CL Y_ST_CR Y_ST_SE Y_ST_EQ
+%token <st_val>  Y_ST_PL Y_ST_PR Y_ST_SL Y_ST_SR Y_ST_CL Y_ST_CR Y_ST_SE Y_ST_CO Y_ST_PE
 %token <op_val> Y_OP_EQ Y_OP_COMP Y_OP_ADD Y_OP_MUL Y_OP_NOT_L Y_OP_AND_L Y_OP_OR_L
-%token <ctrl_val> Y_CTRL_IF Y_CTRL_ELSE Y_CTRL_WHILE Y_CTRL_BREAK Y_CTRL_CONTINUE Y_CTRL_RETURN
+%token <ctrl_val> Y_CTRL_IF Y_CTRL_ELSE Y_CTRL_WHILE Y_CTRL_BREAK Y_CTRL_CONTINUE Y_CTRL_RETURN Y_CTRL_EQUAL
 %token <type_val> Y_TYPE_INT Y_TYPE_VOID Y_TYPE_CONST
 
 %token <const_int_val> Y_CONST_INT
@@ -52,11 +55,14 @@ using namespace std;
 
 %type <CompUnitAST_ast_val>   CompUnit
 %type <FuncDefAST_ast_val>    FuncDef
-%type <BlockAST_ast_val>      Block
+%type <BlockAST_ast_val>      Block BlockRaw
+%type <BlockItemAST_ast_val>  BlockItem
 %type <StmtAST_ast_val>       Stmt
 %type <ExpAST_ast_val>        LOrExp LAndExp EqExp RelExp AddExp MulExp UnaryExp
 %type <PrimaryExpAST_ast_val> PrimaryExp
- 
+%type <DataDeclAST_ast_val>   Decl
+%type <DataDeclAST_ast_val>   ConstDecl VarDecl ConstDeclRaw VarDeclRaw
+%type <DataDefAST_ast_val>    ConstDef VarDef
 %%
 
 CompUnit:
@@ -67,10 +73,28 @@ FuncDef:
     { $$ = new FuncDefAST($1, mvStr($2), $5); };
 
 Block:
-  Y_ST_CL Stmt Y_ST_CR { $$ = new BlockAST($2); };
+  BlockRaw Y_ST_CR { $$ = $1; };
+
+BlockRaw:
+  Y_ST_CL { $$ = new BlockAST(); }|
+  BlockRaw BlockItem { ($1)->append($2); $$ = $1; };
+
+BlockItem:
+  Decl { $$ = new BlockItemAST($1); }|
+  Stmt { $$ = new BlockItemAST($1); };
 
 Stmt:
-  Y_CTRL_RETURN LOrExp Y_ST_SE { $$ = new StmtAST($2); };
+  Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_EMPTY); }|
+  Y_IDENT Y_CTRL_EQUAL LOrExp Y_ST_SE { $$ = new StmtAST(mvStr($1), $3); }|
+  LOrExp Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_EXP, $1); }|
+  Y_CTRL_RETURN LOrExp Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_RET_INT, $2); }|
+  Y_CTRL_RETURN Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_RET_VOID); }|
+  Block { $$ = new StmtAST($1); }|
+  Y_CTRL_IF Y_ST_PL LOrExp Y_ST_PR Stmt { $$ = new StmtAST(StmtEnum::STMT_IF, $3, $5); }|
+  Y_CTRL_IF Y_ST_PL LOrExp Y_ST_PR Stmt Y_CTRL_ELSE Stmt { $$ = new StmtAST(StmtEnum::STMT_IF_ELSE, $3, $5, $7); }|
+  Y_CTRL_WHILE Y_ST_PL LOrExp Y_ST_PR Stmt { $$ = new StmtAST(StmtEnum::STMT_WHILE, $3, $5); }|
+  Y_CTRL_BREAK Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_BREAK); }|
+  Y_CTRL_CONTINUE Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_CONT); } ;
 
 LOrExp:
   LAndExp { $$ = $1; }|
@@ -99,11 +123,37 @@ MulExp:
 UnaryExp: 
   PrimaryExp { $$ = new ExpAST($1); }|
   Y_OP_ADD UnaryExp { $$ = new ExpAST($1, $2); }|
-  Y_OP_NOT_L UnaryExp { $$ = new ExpAST($1, $2); };
+  Y_OP_NOT_L UnaryExp { $$ = new ExpAST($1, $2); }|
+  Y_ST_PL LOrExp Y_ST_PR { $$ = $2; };
 
 PrimaryExp:
-  Y_ST_PL LOrExp Y_ST_PR { $$ = new PrimaryExpAST($2); }|
+  Y_IDENT { $$ = new PrimaryExpAST(mvStr($1)); }|
   Y_CONST_INT { $$ = new PrimaryExpAST($1); };
+
+Decl:
+  ConstDecl { $$ = $1; }|
+  VarDecl { $$ = $1; };
+
+ConstDecl:
+  ConstDeclRaw Y_ST_SE { $$ = $1; }
+
+VarDecl:
+  VarDeclRaw Y_ST_SE { $$ = $1; }
+
+ConstDeclRaw:
+  Y_TYPE_CONST Y_TYPE_INT ConstDef {$$ = new DataDeclAST(DefiEnum::DEFI_CONST, TypeEnum::TYPE_INT, $3); }|
+  ConstDeclRaw Y_ST_CO ConstDef {($1)->append($3); $$ = $1; };
+
+VarDeclRaw:  
+  Y_TYPE_INT VarDef {$$ = new DataDeclAST(DefiEnum::DEFI_VAR, TypeEnum::TYPE_INT, $2); }|
+  VarDeclRaw Y_ST_CO VarDef {($1)->append($3); $$ = $1; };
+
+ConstDef:
+  Y_IDENT Y_CTRL_EQUAL LOrExp {$$ = new DataDefAST(DefiEnum::DEFI_CONST, mvStr($1), $3); };
+
+VarDef:
+  Y_IDENT {$$ = new DataDefAST(DefiEnum::DEFI_VAR, mvStr($1)); }|
+  Y_IDENT Y_CTRL_EQUAL LOrExp {$$ = new DataDefAST(DefiEnum::DEFI_VAR, mvStr($1), $3); };
 
 %%
 
@@ -153,13 +203,43 @@ AddOp       ::= "+" | "-";
 MulExp      ::= UnaryExp | MulExp MulOp UnaryExp;
 MulOp       ::= "*" | "/" | "%";
 
-UnaryExp    ::= PrimaryExp | UnaryOp UnaryExp;
-PrimaryExp  ::= "(" LOrExp ")" | Number;
+UnaryExp    ::= PrimaryExp | UnaryOp UnaryExp | "(" LOrExp ")";
+PrimaryExp  ::= Number;
 UnaryOp     ::= "+" | "-" | "!";
 
 Number      ::= INT_CONST;
 
 
+
+
+Block         ::= "{" {BlockItem} "}";
+BlockItem     ::= Decl | Stmt;
+Stmt          ::= LVal "=" Exp ";" | "return" Exp ";";
+Decl          ::= ConstDecl | VarDecl;
+
+ConstDecl     ::= "const" BType ConstDef {"," ConstDef} ";";
+ConstDef      ::= IDENT "=" ConstInitVal;
+ConstInitVal  ::= Exp
+
+VarDecl       ::= BType VarDef {"," VarDef} ";";
+VarDef        ::= IDENT | IDENT "=" InitVal;
+InitVal       ::= Exp
+
+PrimaryExp    ::= LVal | Number;
+LVal          ::= IDENT;
+
+BType         ::= "int";
+
+Stmt ::= LVal "=" Exp ";"
+       | [Exp] ";"
+       | Block
+       | "return" [Exp] ";";
+1.赋值式，需要LVal，Exp
+2.表达式，需要Exp
+3.返回值，需要Exp
+4.空返回，不需要
+5.块语句，需要Block
+6.空语句，不需要
 
 
 example：

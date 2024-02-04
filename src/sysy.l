@@ -43,7 +43,8 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 "{"             { yylval.st_val   = StructEnum::ST_CL               ; return Y_ST_CL         ; }
 "}"             { yylval.st_val   = StructEnum::ST_CR               ; return Y_ST_CR         ; }
 ";"             { yylval.st_val   = StructEnum::ST_SE               ; return Y_ST_SE         ; }
-"="             { yylval.st_val   = StructEnum::ST_EQ               ; return Y_ST_EQ         ; }
+","             { yylval.st_val   = StructEnum::ST_CO               ; return Y_ST_CO         ; }
+"."             { yylval.st_val   = StructEnum::ST_PE               ; return Y_ST_PE         ; }
 
 "+"             { yylval.op_val   = OpEnum::OP_ADD                  ; return Y_OP_ADD        ; }
 "-"             { yylval.op_val   = OpEnum::OP_SUB                  ; return Y_OP_ADD        ; }
@@ -60,6 +61,7 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 "&&"            { yylval.op_val   = OpEnum::OP_AND_L                ; return Y_OP_AND_L      ; }
 "||"            { yylval.op_val   = OpEnum::OP_OR_L                 ; return Y_OP_OR_L       ; }
 
+"="             { yylval.ctrl_val = CtrlEnum::CTRL_EQUAL            ; return Y_CTRL_EQUAL    ; }
 "if"            { yylval.ctrl_val = CtrlEnum::CTRL_IF               ; return Y_CTRL_IF       ; }
 "else"          { yylval.ctrl_val = CtrlEnum::CTRL_ELSE             ; return Y_CTRL_ELSE     ; }
 "while"         { yylval.ctrl_val = CtrlEnum::CTRL_WHILE            ; return Y_CTRL_WHILE    ; }

@@ -16,7 +16,7 @@ int main(int argc, const char *argv[])
 
     CompUnitAST *ast = yyparse(args.inputFile());
 
-    std::cout << *ast << std::endl;
+    args.ostream() << *ast << std::endl;
 
     return 0;
 

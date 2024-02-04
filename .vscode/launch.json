@@ -11,9 +11,9 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "test/lv3/27_complex_binary.c",
+                "testcases/lv5/6_complex_scopes.c",
                 "-o",
-                "playground/tmp.koopa"
+                "temp/res.txt"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

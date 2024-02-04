@@ -48,6 +48,9 @@ enum StructEnum
     ST_SE = ';',
     ST_EQ = '=',
 
+    ST_CO = ',',
+    ST_PE = '.',
+
 };
 
 enum CtrlEnum
@@ -59,6 +62,7 @@ enum CtrlEnum
     CTRL_BREAK,
     CTRL_CONTINUE,
     CTRL_RETURN,
+    CTRL_EQUAL,
 };
 
 enum TypeEnum
