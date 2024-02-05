@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv5/6_complex_scopes.c",
+                "testcases/lv8/11_short_circuit.c",
                 "-o",
                 "temp/res.txt"
             ],

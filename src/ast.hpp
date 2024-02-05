@@ -19,6 +19,9 @@ class ExpAST;
 class PrimaryExpAST;
 class DataDefAST;
 class DataDeclAST;
+class FuncFParamsAST;
+class FuncFParamAST;
+class FuncRParamsAST;
 
 class BaseAST
 {
@@ -33,10 +36,30 @@ class BaseAST
 
 class CompUnitAST : public BaseAST
 {
+    enum DorF
+    {
+        DORF_NONE,
+        DORF_DECL,
+        DORF_FUNC,
+    };
+    struct DeclOrFunc
+    {
+        DorF eNum;
+        union
+        {
+            void *ptr;
+            DataDeclAST *decl;
+            FuncDefAST *func;
+        };
+    };
+
   public:
-    FuncDefAST *funcDef;
+    std::vector<DeclOrFunc> vec;
     CompUnitAST();
-    CompUnitAST(FuncDefAST *funcDef_);
+    CompUnitAST(DataDeclAST *decl_);
+    CompUnitAST(FuncDefAST *func_);
+    void append(DataDeclAST *decl_);
+    void append(FuncDefAST *func_);
     virtual ~CompUnitAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
@@ -47,10 +70,13 @@ class FuncDefAST : public BaseAST
   public:
     TypeEnum funcType;
     std::string funcName;
+    FuncFParamsAST *paras;
     BlockAST *funcBody;
     FuncDefAST();
-    FuncDefAST(TypeEnum funcType_, std::string funcName_, BlockAST *funcBody_);
-    FuncDefAST(TypeEnum funcType_, const char *funcName_, BlockAST *funcBody_);
+    FuncDefAST(TypeEnum funcType_, std::string funcName_, FuncFParamsAST *paras_,
+               BlockAST *funcBody_);
+    FuncDefAST(TypeEnum funcType_, const char *funcName_, FuncFParamsAST *paras_,
+               BlockAST *funcBody_);
     virtual ~FuncDefAST();
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
@@ -159,15 +185,20 @@ class PrimaryExpAST : public BaseAST
         PRI_NONE,
         PRI_CONST,
         PRI_LVAL,
+        PRI_CALL,
     };
     PrimEnum type;
 
     int constVal;
-    std::string lValIdent;
+    std::string ident;
+    FuncRParamsAST *paras;
 
     PrimaryExpAST();
     PrimaryExpAST(int constVal_);
-    PrimaryExpAST(std::string lValIdent);
+    PrimaryExpAST(std::string lValName_);
+    PrimaryExpAST(const char *lValName_);
+    PrimaryExpAST(std::string funcName_, FuncRParamsAST *paras_);
+    PrimaryExpAST(const char *funcName_, FuncRParamsAST *paras_);
     virtual ~PrimaryExpAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
@@ -209,4 +240,74 @@ class DataDefAST : public BaseAST
     virtual const char *getClassName() const override;
 };
 
+class FuncFParamsAST : public BaseAST
+{
+  public:
+    std::vector<FuncFParamAST *> paraVec;
+    FuncFParamsAST();
+    FuncFParamsAST(FuncFParamAST *para_);
+    virtual ~FuncFParamsAST();
+    void append(FuncFParamAST *para_);
+    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual const char *getClassName() const override;
+};
+
+class FuncFParamAST : public BaseAST
+{
+  public:
+    TypeEnum type;
+    std::string ident;
+    FuncFParamAST();
+    FuncFParamAST(TypeEnum type_, std::string ident_);
+    FuncFParamAST(TypeEnum type_, const char *ident_);
+    virtual ~FuncFParamAST();
+    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual const char *getClassName() const override;
+};
+
+class FuncRParamsAST : public BaseAST
+{
+  public:
+    std::vector<ExpAST *> expVec;
+    FuncRParamsAST();
+    FuncRParamsAST(ExpAST *exp_);
+    virtual ~FuncRParamsAST();
+    void append(ExpAST *exp_);
+    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual const char *getClassName() const override;
+};
+/*
+class DefIdent : public BaseAST
+{
+  public:
+    DefiEnum defi;
+    TypeEnum type;
+    std::string ident;
+    bool emptyValStart;
+    vector<ExpAST *> expVec;
+    DefIdent();
+    DefIdent(std::string ident_, bool emptyValStart = false);
+    DefIdent(const char *ident_, bool emptyValStart = false);
+    virtual ~DefIdent();
+    void append(ExpAST *exp_);
+    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual const char *getClassName() const override;
+};
+
+class DefInitval : public BaseAST
+{
+  public:
+    DefiEnum defi;
+    TypeEnum type;
+    ExpAST *exp;
+    vector<DefInitval *> initList;
+    DefInitval();
+    DefInitval(ExpAST *exp);
+    DefInitval(DefInitval *initVal_);
+    virtual ~DefInitval();
+    void append(DefInitval *initVal_);
+    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual const char *getClassName() const override;
+};
+*/
 #endif // !_AST_HPP_

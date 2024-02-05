@@ -9,8 +9,8 @@ IRBuilder::IRBuilder(CompUnitAST *ast_) { build(ast_); }
 void IRBuilder::build(CompUnitAST *ast_)
 {
     ast = ast_;
-    funcName = ast->funcDef->funcName;
-    returnValue = ast->funcDef->funcBody->itemVec[0]->stmt->lOrExp->primaryExp->constVal;
+    // funcName = ast->funcDefVec[0]->funcName;
+    // returnValue = ast->funcDefVec[0]->funcBody->itemVec[0]->stmt->lOrExp->primaryExp->constVal;
 }
 
 std::string IRBuilder::outputString()

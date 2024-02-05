@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "define.hpp"
 #include <iomanip>
 
 using namespace std;
@@ -34,17 +35,8 @@ Indent::Indent(uint32_t val_) : val(val_){};
 
 std::ostream &operator<<(std::ostream &outStream, const Indent &indent)
 {
-    const static uint32_t indentWidth = 4;
-    const static char ch = '+';
-    if (indentWidth)
-    {
-        for (int i = 0; i < indent.val; i++)
-        {
-            outStream << ch;
-            for (int j = 1; j < indentWidth; j++)
-                outStream << ' ';
-        }
-    }
+    for (int i = 0; i < indent.val; i++)
+        outStream << DUMP_INDENT_STRING;
     return outStream;
 }
 
@@ -64,32 +56,71 @@ std::ostream &operator<<(std::ostream &outStream, const BaseAST &ast)
 
 /* CompUnitAST */
 
-CompUnitAST::CompUnitAST() : funcDef(NULL){};
+CompUnitAST::CompUnitAST() : vec(){};
 
-CompUnitAST::CompUnitAST(FuncDefAST *funcDef_) : funcDef(funcDef_){};
+CompUnitAST::CompUnitAST(DataDeclAST *decl_) : vec()
+{
+    if (decl_)
+        append(decl_);
+}
+
+CompUnitAST::CompUnitAST(FuncDefAST *func_) : vec()
+{
+    if (func_)
+        append(func_);
+};
 
 CompUnitAST::~CompUnitAST()
 {
-    if (funcDef)
-        delete funcDef;
+    for (DeclOrFunc dorf : vec)
+    {
+        if (dorf.eNum == DorF::DORF_DECL)
+            delete dorf.decl;
+        if (dorf.eNum == DorF::DORF_FUNC)
+            delete dorf.func;
+    }
 };
+
+void CompUnitAST::append(DataDeclAST *decl_)
+{
+    DeclOrFunc dorf;
+    dorf.eNum = DorF::DORF_DECL;
+    dorf.decl = decl_;
+    vec.push_back(dorf);
+}
+
+void CompUnitAST::append(FuncDefAST *func_)
+{
+    DeclOrFunc dorf;
+    dorf.eNum = DorF::DORF_FUNC;
+    dorf.func = func_;
+    vec.push_back(dorf);
+}
 
 const char *CompUnitAST::getClassName() const { return "CompUnitAST"; }
 
 void CompUnitAST::DumpContent(std::ostream &outStream, int indent) const
 {
-    funcDef->Dump(outStream, indent + 1);
+    for (DeclOrFunc dorf : vec)
+    {
+        if (dorf.eNum == DorF::DORF_DECL)
+            dorf.decl->Dump(outStream, indent + 1);
+        if (dorf.eNum == DorF::DORF_FUNC)
+            dorf.func->Dump(outStream, indent + 1);
+    }
 }
 
 /* FuncDefAST */
 
 FuncDefAST::FuncDefAST() : funcType(TypeEnum::TYPE_NONE), funcName(), funcBody(NULL){};
 
-FuncDefAST::FuncDefAST(TypeEnum funcType_, std::string funcName_, BlockAST *funcBody_)
-    : funcType(funcType_), funcName(funcName_), funcBody(funcBody_){};
+FuncDefAST::FuncDefAST(TypeEnum funcType_, std::string funcName_, FuncFParamsAST *paras_,
+                       BlockAST *funcBody_)
+    : funcType(funcType_), funcName(funcName_), paras(paras_), funcBody(funcBody_){};
 
-FuncDefAST::FuncDefAST(TypeEnum funcType_, const char *funcName_, BlockAST *funcBody_)
-    : funcType(funcType_), funcName(funcName_), funcBody(funcBody_){};
+FuncDefAST::FuncDefAST(TypeEnum funcType_, const char *funcName_, FuncFParamsAST *paras_,
+                       BlockAST *funcBody_)
+    : funcType(funcType_), funcName(funcName_), paras(paras_), funcBody(funcBody_){};
 
 FuncDefAST::~FuncDefAST()
 {
@@ -103,6 +134,7 @@ void FuncDefAST::DumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "funcType: " << typeName[(int)(funcType)] << std::endl;
     outStream << Indent(indent + 1) << "funcName: " << funcName << std::endl;
+    paras->Dump(outStream, indent + 1);
     funcBody->Dump(outStream, indent + 1);
 }
 
@@ -229,6 +261,28 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
         outStream << Indent(indent + 1) << "STMT_BLOCK" << std::endl;
         block->Dump(outStream, indent + 1);
         break;
+    case STMT_IF:;
+        outStream << Indent(indent + 1) << "STMT_IF" << std::endl;
+        lOrExp->Dump(outStream, indent + 1);
+        mainStmt->Dump(outStream, indent + 1);
+        break;
+    case STMT_IF_ELSE:;
+        outStream << Indent(indent + 1) << "STMT_IF_ELSE" << std::endl;
+        lOrExp->Dump(outStream, indent + 1);
+        mainStmt->Dump(outStream, indent + 1);
+        elseStmt->Dump(outStream, indent + 1);
+        break;
+    case STMT_WHILE:;
+        outStream << Indent(indent + 1) << "STMT_WHILE" << std::endl;
+        lOrExp->Dump(outStream, indent + 1);
+        mainStmt->Dump(outStream, indent + 1);
+        break;
+    case STMT_BREAK:;
+        outStream << Indent(indent + 1) << "STMT_BREAK" << std::endl;
+        break;
+    case STMT_CONT:;
+        outStream << Indent(indent + 1) << "STMT_CONT" << std::endl;
+        break;
     default:
         break;
     }
@@ -293,19 +347,43 @@ void ExpAST::DumpContent(std::ostream &outStream, int indent) const
 
 /* PrimaryExpAST */
 
-PrimaryExpAST::PrimaryExpAST() : type(PrimEnum::PRI_NONE), constVal(0), lValIdent() {}
-
+PrimaryExpAST::PrimaryExpAST() : type(PrimEnum::PRI_NONE), constVal(0), ident(), paras(NULL) {}
+/*
+    PrimaryExpAST(std::string lValName_);
+    PrimaryExpAST(const char *lValName_);
+    PrimaryExpAST(std::string funcName_, ExpAST *exp_);
+    PrimaryExpAST(const char *funcName_, ExpAST *exp_);
+*/
 PrimaryExpAST::PrimaryExpAST(int constVal_)
-    : type(PrimEnum::PRI_CONST), constVal(constVal_), lValIdent()
+    : type(PrimEnum::PRI_CONST), constVal(constVal_), ident(), paras(NULL)
 {
 }
 
-PrimaryExpAST::PrimaryExpAST(std::string lValIdent_)
-    : type(PrimEnum::PRI_LVAL), constVal(0), lValIdent(lValIdent_)
+PrimaryExpAST::PrimaryExpAST(std::string lValName_)
+    : type(PrimEnum::PRI_LVAL), constVal(0), ident(lValName_), paras(NULL)
 {
 }
 
-PrimaryExpAST::~PrimaryExpAST() {}
+PrimaryExpAST::PrimaryExpAST(const char *lValName_)
+    : type(PrimEnum::PRI_LVAL), constVal(0), ident(lValName_), paras(NULL)
+{
+}
+
+PrimaryExpAST::PrimaryExpAST(std::string funcName_, FuncRParamsAST *paras_)
+    : type(PrimEnum::PRI_CALL), constVal(0), ident(funcName_), paras(paras_)
+{
+}
+
+PrimaryExpAST::PrimaryExpAST(const char *funcName_, FuncRParamsAST *paras_)
+    : type(PrimEnum::PRI_CALL), constVal(0), ident(funcName_), paras(paras_)
+{
+}
+
+PrimaryExpAST::~PrimaryExpAST()
+{
+    if (paras)
+        delete paras;
+}
 
 const char *PrimaryExpAST::getClassName() const { return "PrimaryExpAST"; }
 
@@ -316,7 +394,12 @@ void PrimaryExpAST::DumpContent(std::ostream &outStream, int indent) const
     if (type == PrimEnum::PRI_CONST)
         outStream << Indent(indent + 1) << "Number: " << constVal << std::endl;
     if (type == PrimEnum::PRI_LVAL)
-        outStream << Indent(indent + 1) << "Ident: " << lValIdent << std::endl;
+        outStream << Indent(indent + 1) << "Ident: " << ident << std::endl;
+    if (type == PrimEnum::PRI_CALL)
+    {
+        outStream << Indent(indent + 1) << "FuncName: " << ident << std::endl;
+        paras->Dump(outStream, indent + 1);
+    }
 }
 
 /* DataDeclAST */
@@ -385,3 +468,107 @@ void DataDefAST::DumpContent(std::ostream &outStream, int indent) const
     if (exp)
         exp->Dump(outStream, indent + 1);
 }
+
+/* FuncFParamsAST */
+
+FuncFParamsAST::FuncFParamsAST() : paraVec() {}
+
+FuncFParamsAST::FuncFParamsAST(FuncFParamAST *para_) : paraVec()
+{
+    if (para_)
+        append(para_);
+}
+
+FuncFParamsAST::~FuncFParamsAST()
+{
+    for (FuncFParamAST *para : paraVec)
+        delete para;
+}
+
+void FuncFParamsAST::append(FuncFParamAST *para_) { paraVec.push_back(para_); }
+
+void FuncFParamsAST::DumpContent(std::ostream &outStream, int indent) const
+{
+    for (FuncFParamAST *para : paraVec)
+        para->Dump(outStream, indent + 1);
+}
+
+const char *FuncFParamsAST::getClassName() const { return "FuncFParamsAST"; }
+
+/* FuncFParamAST */
+
+FuncFParamAST::FuncFParamAST() : type(TypeEnum::TYPE_NONE), ident() {}
+
+FuncFParamAST::FuncFParamAST(TypeEnum type_, std::string ident_) : type(type_), ident(ident_) {}
+
+FuncFParamAST::FuncFParamAST(TypeEnum type_, const char *ident_) : type(type_), ident(ident_) {}
+
+FuncFParamAST::~FuncFParamAST() {}
+
+void FuncFParamAST::DumpContent(std::ostream &outStream, int indent) const
+{
+    outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
+    outStream << Indent(indent + 1) << "Ident: " << ident << std::endl;
+}
+
+const char *FuncFParamAST::getClassName() const { return "FuncFParamAST"; }
+
+/* FuncRParamsAST */
+
+FuncRParamsAST::FuncRParamsAST() : expVec() {}
+
+FuncRParamsAST::FuncRParamsAST(ExpAST *exp_) : expVec()
+{
+    if (exp_)
+        append(exp_);
+}
+
+FuncRParamsAST::~FuncRParamsAST()
+{
+    for (ExpAST *exp : expVec)
+        delete exp;
+}
+
+void FuncRParamsAST::append(ExpAST *exp_) { expVec.push_back(exp_); }
+
+void FuncRParamsAST::DumpContent(std::ostream &outStream, int indent) const
+{
+    for (ExpAST *exp : expVec)
+        exp->Dump(outStream, indent + 1);
+}
+
+const char *FuncRParamsAST::getClassName() const { return "FuncRParamsAST"; }
+/*
+DefIdent::DefIdent()
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(), emptyValStart(false),
+      expVec(NULL)
+{
+}
+
+DefIdent::DefIdent(std::string ident_, bool emptyValStart = false)
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(ident_),
+      emptyValStart(emptyValStart), expVec(NULL)
+{
+}
+
+DefIdent::DefIdent(const char *ident_, bool emptyValStart = false)
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(ident_),
+      emptyValStart(emptyValStart), expVec(NULL)
+{
+}
+
+DefIdent::~DefIdent()
+{
+    for (ExpAST *exp : expVec)
+        delete exp;
+}
+
+void DefIdent::append(ExpAST *exp_) { expVec.push_back(exp_); }
+
+void DefIdent::DumpContent(std::ostream &outStream = std::cout, int indent = 0) const 
+{
+
+}
+
+const char *DefIdent::getClassName() const { return "DefIdent"; }
+*/
