@@ -4,7 +4,7 @@
 
 using namespace std;
 
-static const char *defiName[] = {"NONE", "Var", "Const"};
+static const char *defiName[] = {"NONE", "Var", "Const", "LVal"};
 static const char *typeName[] = {"NONE", "void", "int", "const"};
 static const char *optName[] = {
 
@@ -142,7 +142,11 @@ void FuncDefAST::DumpContent(std::ostream &outStream, int indent) const
 
 BlockAST::BlockAST() : itemVec() {}
 
-void BlockAST::append(BlockItemAST *item) { itemVec.push_back(item); }
+void BlockAST::append(BlockItemAST *item_)
+{
+    if (item_)
+        itemVec.push_back(item_);
+}
 
 BlockAST::~BlockAST()
 {
@@ -188,37 +192,36 @@ void BlockItemAST::DumpContent(std::ostream &outStream, int indent) const
 
 /* StmtAST */
 
-StmtAST::StmtAST() : st(StmtEnum::STMT_NONE), ident(), ptr(NULL), mainStmt(NULL), elseStmt(NULL) {}
-
-StmtAST::StmtAST(StmtEnum st_) : st(st_), ident(), ptr(NULL), mainStmt(NULL), elseStmt(NULL) {}
-
-StmtAST::StmtAST(std::string ident_, ExpAST *lOrExp_)
-    : st(StmtEnum::STMT_ASSIGN), ident(ident_), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL)
+StmtAST::StmtAST() : st(StmtEnum::STMT_NONE), lVal(NULL), ptr(NULL), mainStmt(NULL), elseStmt(NULL)
 {
 }
 
-StmtAST::StmtAST(const char *ident_, ExpAST *lOrExp_)
-    : st(StmtEnum::STMT_ASSIGN), ident(ident_), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL)
+StmtAST::StmtAST(StmtEnum st_) : st(st_), lVal(NULL), ptr(NULL), mainStmt(NULL), elseStmt(NULL) {}
+
+StmtAST::StmtAST(DataLValIdentAST *lVal_, ExpAST *lOrExp_)
+    : st(StmtEnum::STMT_ASSIGN), lVal(lVal_), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL)
 {
 }
 
 StmtAST::StmtAST(StmtEnum st_, ExpAST *lOrExp_)
-    : st(st_), ident(), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL)
+    : st(st_), lVal(NULL), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL)
 {
 }
 
 StmtAST::StmtAST(BlockAST *block_)
-    : st(StmtEnum::STMT_BLOCK), ident(), block(block_), mainStmt(NULL), elseStmt(NULL)
+    : st(StmtEnum::STMT_BLOCK), lVal(NULL), block(block_), mainStmt(NULL), elseStmt(NULL)
 {
 }
 
 StmtAST::StmtAST(StmtEnum st_, ExpAST *lOrExp_, StmtAST *mainStmt_, StmtAST *elseStmt_)
-    : st(st_), ident(), lOrExp(lOrExp_), mainStmt(mainStmt_), elseStmt(elseStmt_)
+    : st(st_), lVal(NULL), lOrExp(lOrExp_), mainStmt(mainStmt_), elseStmt(elseStmt_)
 {
 }
 
 StmtAST::~StmtAST()
 {
+    if (lVal)
+        delete lVal;
     if (st == StmtEnum::STMT_ASSIGN || st == StmtEnum::STMT_EXP || st == StmtEnum::STMT_RET_INT)
         delete lOrExp;
     if (st == StmtEnum::STMT_BLOCK)
@@ -243,7 +246,7 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
         break;
     case STMT_ASSIGN:;
         outStream << Indent(indent + 1) << "STMT_ASSIGN" << std::endl;
-        outStream << Indent(indent + 1) << "LVal: " << ident << std::endl;
+        lVal->Dump(outStream, indent + 1);
         lOrExp->Dump(outStream, indent + 1);
         break;
     case STMT_EXP:;
@@ -347,35 +350,25 @@ void ExpAST::DumpContent(std::ostream &outStream, int indent) const
 
 /* PrimaryExpAST */
 
-PrimaryExpAST::PrimaryExpAST() : type(PrimEnum::PRI_NONE), constVal(0), ident(), paras(NULL) {}
-/*
-    PrimaryExpAST(std::string lValName_);
-    PrimaryExpAST(const char *lValName_);
-    PrimaryExpAST(std::string funcName_, ExpAST *exp_);
-    PrimaryExpAST(const char *funcName_, ExpAST *exp_);
-*/
+PrimaryExpAST::PrimaryExpAST() : type(PrimEnum::PRI_NONE), constVal(0), funcName(), ptr(NULL) {}
+
+PrimaryExpAST::PrimaryExpAST(DataLValIdentAST *lVal_)
+    : type(PrimEnum::PRI_LVAL), constVal(0), funcName(), lVal(lVal_)
+{
+}
+
 PrimaryExpAST::PrimaryExpAST(int constVal_)
-    : type(PrimEnum::PRI_CONST), constVal(constVal_), ident(), paras(NULL)
-{
-}
-
-PrimaryExpAST::PrimaryExpAST(std::string lValName_)
-    : type(PrimEnum::PRI_LVAL), constVal(0), ident(lValName_), paras(NULL)
-{
-}
-
-PrimaryExpAST::PrimaryExpAST(const char *lValName_)
-    : type(PrimEnum::PRI_LVAL), constVal(0), ident(lValName_), paras(NULL)
+    : type(PrimEnum::PRI_CONST), constVal(constVal_), funcName(), ptr(NULL)
 {
 }
 
 PrimaryExpAST::PrimaryExpAST(std::string funcName_, FuncRParamsAST *paras_)
-    : type(PrimEnum::PRI_CALL), constVal(0), ident(funcName_), paras(paras_)
+    : type(PrimEnum::PRI_CALL), constVal(0), funcName(funcName_), paras(paras_)
 {
 }
 
 PrimaryExpAST::PrimaryExpAST(const char *funcName_, FuncRParamsAST *paras_)
-    : type(PrimEnum::PRI_CALL), constVal(0), ident(funcName_), paras(paras_)
+    : type(PrimEnum::PRI_CALL), constVal(0), funcName(funcName_), paras(paras_)
 {
 }
 
@@ -394,10 +387,10 @@ void PrimaryExpAST::DumpContent(std::ostream &outStream, int indent) const
     if (type == PrimEnum::PRI_CONST)
         outStream << Indent(indent + 1) << "Number: " << constVal << std::endl;
     if (type == PrimEnum::PRI_LVAL)
-        outStream << Indent(indent + 1) << "Ident: " << ident << std::endl;
+        lVal->Dump(outStream, indent + 1);
     if (type == PrimEnum::PRI_CALL)
     {
-        outStream << Indent(indent + 1) << "FuncName: " << ident << std::endl;
+        outStream << Indent(indent + 1) << "FuncName: " << funcName << std::endl;
         paras->Dump(outStream, indent + 1);
     }
 }
@@ -423,7 +416,8 @@ void DataDeclAST::append(DataDefAST *def_)
 {
     def_->defi = defi;
     def_->type = type;
-    defVec.push_back(def_);
+    if (def_)
+        defVec.push_back(def_);
 }
 
 const char *DataDeclAST::getClassName() const { return "DataDeclAST"; }
@@ -438,17 +432,14 @@ void DataDeclAST::DumpContent(std::ostream &outStream, int indent) const
 
 /* DataDefAST */
 
-DataDefAST::DataDefAST() : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(), exp(NULL)
+DataDefAST::DataDefAST()
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), defIdent(NULL), initval(NULL)
 {
 }
 
-DataDefAST::DataDefAST(DefiEnum defi_, std::string ident_, ExpAST *exp_)
-    : defi(defi_), type(TypeEnum::TYPE_NONE), ident(ident_), exp(exp_)
-{
-}
-
-DataDefAST::DataDefAST(DefiEnum defi_, const char *ident_, ExpAST *exp_)
-    : defi(defi_), type(TypeEnum::TYPE_NONE), ident(ident_), exp(exp_)
+DataDefAST::DataDefAST(DefiEnum defi_, TypeEnum type_, DataLValIdentAST *defIdent_,
+                       DataInitvalAST *initval_)
+    : defi(defi_), type(type_), defIdent(defIdent_), initval(initval_)
 {
 }
 
@@ -456,17 +447,20 @@ const char *DataDefAST::getClassName() const { return "DataDefAST"; }
 
 DataDefAST::~DataDefAST()
 {
-    if (exp)
-        delete exp;
+    if (defIdent)
+        delete defIdent;
+    if (initval)
+        delete initval;
 }
 
 void DataDefAST::DumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "Defi: " << defiName[(int)(defi)] << std::endl;
     outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
-    outStream << Indent(indent + 1) << "Ident: " << ident << std::endl;
-    if (exp)
-        exp->Dump(outStream, indent + 1);
+    if (defIdent)
+        defIdent->Dump(outStream, indent + 1);
+    if (initval)
+        initval->Dump(outStream, indent + 1);
 }
 
 /* FuncFParamsAST */
@@ -485,7 +479,11 @@ FuncFParamsAST::~FuncFParamsAST()
         delete para;
 }
 
-void FuncFParamsAST::append(FuncFParamAST *para_) { paraVec.push_back(para_); }
+void FuncFParamsAST::append(FuncFParamAST *para_)
+{
+    if (para_)
+        paraVec.push_back(para_);
+}
 
 void FuncFParamsAST::DumpContent(std::ostream &outStream, int indent) const
 {
@@ -497,18 +495,16 @@ const char *FuncFParamsAST::getClassName() const { return "FuncFParamsAST"; }
 
 /* FuncFParamAST */
 
-FuncFParamAST::FuncFParamAST() : type(TypeEnum::TYPE_NONE), ident() {}
+FuncFParamAST::FuncFParamAST() : type(TypeEnum::TYPE_NONE), para(NULL) {}
 
-FuncFParamAST::FuncFParamAST(TypeEnum type_, std::string ident_) : type(type_), ident(ident_) {}
-
-FuncFParamAST::FuncFParamAST(TypeEnum type_, const char *ident_) : type(type_), ident(ident_) {}
+FuncFParamAST::FuncFParamAST(TypeEnum type_, DataLValIdentAST *para_) : type(type_), para(para_) {}
 
 FuncFParamAST::~FuncFParamAST() {}
 
 void FuncFParamAST::DumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
-    outStream << Indent(indent + 1) << "Ident: " << ident << std::endl;
+    para->Dump(outStream, indent + 1);
 }
 
 const char *FuncFParamAST::getClassName() const { return "FuncFParamAST"; }
@@ -529,7 +525,11 @@ FuncRParamsAST::~FuncRParamsAST()
         delete exp;
 }
 
-void FuncRParamsAST::append(ExpAST *exp_) { expVec.push_back(exp_); }
+void FuncRParamsAST::append(ExpAST *exp_)
+{
+    if (exp_)
+        expVec.push_back(exp_);
+}
 
 void FuncRParamsAST::DumpContent(std::ostream &outStream, int indent) const
 {
@@ -538,37 +538,96 @@ void FuncRParamsAST::DumpContent(std::ostream &outStream, int indent) const
 }
 
 const char *FuncRParamsAST::getClassName() const { return "FuncRParamsAST"; }
-/*
-DefIdent::DefIdent()
+
+/* DataLValIdentAST */
+
+DataLValIdentAST::DataLValIdentAST()
     : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(), emptyValStart(false),
-      expVec(NULL)
+      expVec()
 {
 }
 
-DefIdent::DefIdent(std::string ident_, bool emptyValStart = false)
-    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(ident_),
-      emptyValStart(emptyValStart), expVec(NULL)
+DataLValIdentAST::DataLValIdentAST(DefiEnum defi_, TypeEnum type_, std::string ident_,
+                                   bool emptyValStart)
+    : defi(defi_), type(type_), ident(ident_), emptyValStart(emptyValStart), expVec()
 {
 }
 
-DefIdent::DefIdent(const char *ident_, bool emptyValStart = false)
-    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(ident_),
-      emptyValStart(emptyValStart), expVec(NULL)
+DataLValIdentAST::DataLValIdentAST(DefiEnum defi_, TypeEnum type_, const char *ident_,
+                                   bool emptyValStart)
+    : defi(defi_), type(type_), ident(ident_), emptyValStart(emptyValStart), expVec()
 {
 }
 
-DefIdent::~DefIdent()
+DataLValIdentAST::~DataLValIdentAST()
 {
     for (ExpAST *exp : expVec)
         delete exp;
 }
 
-void DefIdent::append(ExpAST *exp_) { expVec.push_back(exp_); }
-
-void DefIdent::DumpContent(std::ostream &outStream = std::cout, int indent = 0) const 
+void DataLValIdentAST::append(ExpAST *exp_)
 {
-
+    if (exp_)
+        expVec.push_back(exp_);
 }
 
-const char *DefIdent::getClassName() const { return "DefIdent"; }
-*/
+void DataLValIdentAST::DumpContent(std::ostream &outStream, int indent) const
+{
+    outStream << Indent(indent + 1) << "Defi: " << defiName[(int)(defi)] << std::endl;
+    outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
+    outStream << Indent(indent + 1) << "Ident: " << ident << std::endl;
+    outStream << Indent(indent + 1) << "emptyValStart: " << (emptyValStart ? "YES" : "NO")
+              << std::endl;
+    for (ExpAST *exp : expVec)
+        exp->Dump(outStream, indent + 1);
+}
+
+const char *DataLValIdentAST::getClassName() const { return "DataLValIdentAST"; }
+
+/* DataInitvalAST */
+
+DataInitvalAST::DataInitvalAST()
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), exp(NULL), initVec()
+{
+}
+
+DataInitvalAST::DataInitvalAST(DefiEnum defi_, TypeEnum type_, ExpAST *exp_)
+    : defi(defi_), type(type_), exp(exp_), initVec()
+{
+}
+
+DataInitvalAST::DataInitvalAST(DefiEnum defi_, TypeEnum type_, DataInitvalAST *initVal_)
+    : defi(defi_), type(type_), exp(NULL), initVec()
+{
+    if (initVal_)
+        initVec.push_back(initVal_);
+}
+
+DataInitvalAST::~DataInitvalAST()
+{
+    if (exp)
+        delete exp;
+    for (DataInitvalAST *elem : initVec)
+        delete elem;
+}
+
+void DataInitvalAST::append(DataInitvalAST *initVal_)
+{
+    if (initVal_)
+        initVec.push_back(initVal_);
+}
+
+void DataInitvalAST::DumpContent(std::ostream &outStream, int indent) const
+{
+    outStream << Indent(indent + 1) << "Defi: " << defiName[(int)(defi)] << std::endl;
+    outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
+    if (exp)
+        exp->Dump(outStream, indent + 1);
+    else
+    {
+        for (DataInitvalAST *initVal : initVec)
+            initVal->Dump(outStream, indent + 1);
+    }
+}
+
+const char *DataInitvalAST::getClassName() const { return "DataInitvalAST"; }

@@ -17,11 +17,13 @@ class BlockItemAST;
 class StmtAST;
 class ExpAST;
 class PrimaryExpAST;
-class DataDefAST;
 class DataDeclAST;
+class DataDefAST;
 class FuncFParamsAST;
 class FuncFParamAST;
 class FuncRParamsAST;
+class DataLValIdentAST;
+class DataInitvalAST;
 
 class BaseAST
 {
@@ -136,7 +138,7 @@ class StmtAST : public BaseAST
 {
   public:
     StmtEnum st;
-    std::string ident;
+    DataLValIdentAST *lVal;
     union
     {
         ExpAST *lOrExp;
@@ -147,8 +149,7 @@ class StmtAST : public BaseAST
     StmtAST *elseStmt;
     StmtAST();
     StmtAST(StmtEnum st_);
-    StmtAST(std::string ident_, ExpAST *lOrExp_);
-    StmtAST(const char *ident_, ExpAST *lOrExp_);
+    StmtAST(DataLValIdentAST *lVal_, ExpAST *lOrExp_);
     StmtAST(StmtEnum st_, ExpAST *lOrExp_);
     StmtAST(BlockAST *block_);
     StmtAST(StmtEnum st_, ExpAST *lOrExp_, StmtAST *mainStmt_, StmtAST *elseStmt_ = NULL);
@@ -190,13 +191,17 @@ class PrimaryExpAST : public BaseAST
     PrimEnum type;
 
     int constVal;
-    std::string ident;
-    FuncRParamsAST *paras;
+    std::string funcName;
+    union
+    {
+        DataLValIdentAST *lVal;
+        FuncRParamsAST *paras;
+        void *ptr;
+    };
 
     PrimaryExpAST();
     PrimaryExpAST(int constVal_);
-    PrimaryExpAST(std::string lValName_);
-    PrimaryExpAST(const char *lValName_);
+    PrimaryExpAST(DataLValIdentAST *lVal_);
     PrimaryExpAST(std::string funcName_, FuncRParamsAST *paras_);
     PrimaryExpAST(const char *funcName_, FuncRParamsAST *paras_);
     virtual ~PrimaryExpAST();
@@ -209,6 +214,7 @@ enum DefiEnum
     DEFI_NONE,
     DEFI_VAR,
     DEFI_CONST,
+    DEFI_LVAL,
 };
 
 class DataDeclAST : public BaseAST
@@ -230,11 +236,11 @@ class DataDefAST : public BaseAST
   public:
     DefiEnum defi;
     TypeEnum type;
-    std::string ident;
-    ExpAST *exp;
+    DataLValIdentAST *defIdent;
+    DataInitvalAST *initval;
     DataDefAST();
-    DataDefAST(DefiEnum defi_, std::string ident_, ExpAST *exp_ = NULL);
-    DataDefAST(DefiEnum defi_, const char *ident_, ExpAST *exp_ = NULL);
+    DataDefAST(DefiEnum defi_, TypeEnum type_, DataLValIdentAST *defIdent_,
+               DataInitvalAST *initval_ = NULL);
     virtual ~DataDefAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
@@ -256,10 +262,9 @@ class FuncFParamAST : public BaseAST
 {
   public:
     TypeEnum type;
-    std::string ident;
+    DataLValIdentAST *para;
     FuncFParamAST();
-    FuncFParamAST(TypeEnum type_, std::string ident_);
-    FuncFParamAST(TypeEnum type_, const char *ident_);
+    FuncFParamAST(TypeEnum type_, DataLValIdentAST *para_);
     virtual ~FuncFParamAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
@@ -276,38 +281,40 @@ class FuncRParamsAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
 };
-/*
-class DefIdent : public BaseAST
+
+class DataLValIdentAST : public BaseAST
 {
   public:
     DefiEnum defi;
     TypeEnum type;
     std::string ident;
     bool emptyValStart;
-    vector<ExpAST *> expVec;
-    DefIdent();
-    DefIdent(std::string ident_, bool emptyValStart = false);
-    DefIdent(const char *ident_, bool emptyValStart = false);
-    virtual ~DefIdent();
+    std::vector<ExpAST *> expVec;
+    DataLValIdentAST();
+    DataLValIdentAST(DefiEnum defi_, TypeEnum type_, std::string ident_,
+                     bool emptyValStart = false);
+    DataLValIdentAST(DefiEnum defi_, TypeEnum type_, const char *ident_,
+                     bool emptyValStart = false);
+    virtual ~DataLValIdentAST();
     void append(ExpAST *exp_);
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
 };
 
-class DefInitval : public BaseAST
+class DataInitvalAST : public BaseAST
 {
   public:
     DefiEnum defi;
     TypeEnum type;
     ExpAST *exp;
-    vector<DefInitval *> initList;
-    DefInitval();
-    DefInitval(ExpAST *exp);
-    DefInitval(DefInitval *initVal_);
-    virtual ~DefInitval();
-    void append(DefInitval *initVal_);
+    std::vector<DataInitvalAST *> initVec;
+    DataInitvalAST();
+    DataInitvalAST(DefiEnum defi_, TypeEnum type_, ExpAST *exp_);
+    DataInitvalAST(DefiEnum defi_, TypeEnum type_, DataInitvalAST *initVal_ = NULL);
+    virtual ~DataInitvalAST();
+    void append(DataInitvalAST *initVal_);
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
 };
-*/
+
 #endif // !_AST_HPP_
