@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv9/15_sort1.c",
+                "testcases/lv8/09_globals.c",
                 "-o",
                 "temp/res.txt"
             ],
@@ -20,6 +20,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
+            "justMyCode": false,
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

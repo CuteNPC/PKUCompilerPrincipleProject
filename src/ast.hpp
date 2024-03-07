@@ -4,9 +4,12 @@
 
 #include <fstream>
 #include <iostream>
-#include <keyword.hpp>
+#include "keyword.hpp"
 #include <memory>
 #include <vector>
+
+class SymbolTable;
+class SymbolEntry;
 
 class BaseAST;
 
@@ -31,40 +34,26 @@ class BaseAST
     BaseAST() = default;
     virtual ~BaseAST() = default;
     void Dump(std::ostream &outStream = std::cout, int indent = 0) const;
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const = 0;
     virtual const char *getClassName() const = 0;
+    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const = 0;
+    virtual void setSymbolTable(SymbolTable *symTab) = 0;
     friend std::ostream &operator<<(std::ostream &outStream, const BaseAST &ast);
 };
 
 class CompUnitAST : public BaseAST
 {
-    enum DorF
-    {
-        DORF_NONE,
-        DORF_DECL,
-        DORF_FUNC,
-    };
-    struct DeclOrFunc
-    {
-        DorF eNum;
-        union
-        {
-            void *ptr;
-            DataDeclAST *decl;
-            FuncDefAST *func;
-        };
-    };
-
   public:
-    std::vector<DeclOrFunc> vec;
+    std::vector<DataDeclAST *> declVec;
+    std::vector<FuncDefAST *> funcVec;
     CompUnitAST();
     CompUnitAST(DataDeclAST *decl_);
     CompUnitAST(FuncDefAST *func_);
     void append(DataDeclAST *decl_);
     void append(FuncDefAST *func_);
     virtual ~CompUnitAST();
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class FuncDefAST : public BaseAST
@@ -82,28 +71,28 @@ class FuncDefAST : public BaseAST
     virtual ~FuncDefAST();
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class BlockAST : public BaseAST
 {
   public:
     std::vector<BlockItemAST *> itemVec;
+    std::vector<int> vecIndex;
+    int lineIndex;
     BlockAST();
     void append(BlockItemAST *item);
+    void setIndex(std::vector<int> vecIndex_, int lineIndex_);
     virtual ~BlockAST();
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class BlockItemAST : public BaseAST
 {
   public:
-    enum BlockItemEnum
-    {
-        BLOCK_NONE,
-        BLOCK_DECL,
-        BLOCK_STMT,
-    } itemEnum;
+    BlockItemEnum itemEnum;
     union
     {
         DataDeclAST *decl;
@@ -116,22 +105,7 @@ class BlockItemAST : public BaseAST
     virtual ~BlockItemAST();
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
-};
-
-enum StmtEnum
-{
-    STMT_NONE,
-    STMT_EMPTY,
-    STMT_ASSIGN,
-    STMT_EXP,
-    STMT_RET_INT,
-    STMT_RET_VOID,
-    STMT_BLOCK,
-    STMT_IF,
-    STMT_IF_ELSE,
-    STMT_WHILE,
-    STMT_BREAK,
-    STMT_CONT,
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class StmtAST : public BaseAST
@@ -156,6 +130,7 @@ class StmtAST : public BaseAST
     virtual ~StmtAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class ExpAST : public BaseAST
@@ -176,18 +151,13 @@ class ExpAST : public BaseAST
     virtual ~ExpAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    int forceCalc(SymbolTable *symTab);
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class PrimaryExpAST : public BaseAST
 {
   public:
-    enum PrimEnum
-    {
-        PRI_NONE,
-        PRI_CONST,
-        PRI_LVAL,
-        PRI_CALL,
-    };
     PrimEnum type;
 
     int constVal;
@@ -207,14 +177,8 @@ class PrimaryExpAST : public BaseAST
     virtual ~PrimaryExpAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
-};
-
-enum DefiEnum
-{
-    DEFI_NONE,
-    DEFI_VAR,
-    DEFI_CONST,
-    DEFI_LVAL,
+    int forceCalc(SymbolTable *symTab);
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class DataDeclAST : public BaseAST
@@ -229,6 +193,7 @@ class DataDeclAST : public BaseAST
     void append(DataDefAST *def_);
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class DataDefAST : public BaseAST
@@ -244,6 +209,7 @@ class DataDefAST : public BaseAST
     virtual ~DataDefAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class FuncFParamsAST : public BaseAST
@@ -256,6 +222,7 @@ class FuncFParamsAST : public BaseAST
     void append(FuncFParamAST *para_);
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class FuncFParamAST : public BaseAST
@@ -268,6 +235,7 @@ class FuncFParamAST : public BaseAST
     virtual ~FuncFParamAST();
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class FuncRParamsAST : public BaseAST
@@ -280,6 +248,7 @@ class FuncRParamsAST : public BaseAST
     void append(ExpAST *exp_);
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class DataLValIdentAST : public BaseAST
@@ -299,6 +268,7 @@ class DataLValIdentAST : public BaseAST
     void append(ExpAST *exp_);
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 class DataInitvalAST : public BaseAST
@@ -315,6 +285,7 @@ class DataInitvalAST : public BaseAST
     void append(DataInitvalAST *initVal_);
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
+    virtual void setSymbolTable(SymbolTable *symTab) override;
 };
 
 #endif // !_AST_HPP_

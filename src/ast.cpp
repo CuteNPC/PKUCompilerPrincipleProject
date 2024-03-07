@@ -1,26 +1,10 @@
 #include "ast.hpp"
 #include "define.hpp"
+#include "symtab.hpp"
+#include <assert.h>
 #include <iomanip>
 
 using namespace std;
-
-static const char *defiName[] = {"NONE", "Var", "Const", "LVal"};
-static const char *typeName[] = {"NONE", "void", "int", "const"};
-static const char *optName[] = {
-
-    "OP_NONE",
-
-    "OP_PRI",
-
-    "OP_E",     "OP_NE",    "OP_L",    "OP_LE",    "OP_G",   "OP_GE",
-
-    "OP_POS",   "OP_NEG",   "OP_ADD",  "OP_SUB",   "OP_MUL", "OP_DIV", "OP_MOD",
-
-    "OP_NOT_B", "OP_AND_B", "OP_OR_B", "OP_XOR_B",
-
-    "OP_NOT_L", "OP_AND_L", "OP_OR_L",
-
-};
 
 class Indent
 {
@@ -56,15 +40,15 @@ std::ostream &operator<<(std::ostream &outStream, const BaseAST &ast)
 
 /* CompUnitAST */
 
-CompUnitAST::CompUnitAST() : vec(){};
+CompUnitAST::CompUnitAST() : declVec(), funcVec(){};
 
-CompUnitAST::CompUnitAST(DataDeclAST *decl_) : vec()
+CompUnitAST::CompUnitAST(DataDeclAST *decl_) : declVec(), funcVec()
 {
     if (decl_)
         append(decl_);
 }
 
-CompUnitAST::CompUnitAST(FuncDefAST *func_) : vec()
+CompUnitAST::CompUnitAST(FuncDefAST *func_) : declVec(), funcVec()
 {
     if (func_)
         append(func_);
@@ -72,42 +56,32 @@ CompUnitAST::CompUnitAST(FuncDefAST *func_) : vec()
 
 CompUnitAST::~CompUnitAST()
 {
-    for (DeclOrFunc dorf : vec)
-    {
-        if (dorf.eNum == DorF::DORF_DECL)
-            delete dorf.decl;
-        if (dorf.eNum == DorF::DORF_FUNC)
-            delete dorf.func;
-    }
+    for (DataDeclAST *decl : declVec)
+        delete decl;
+    for (FuncDefAST *func : funcVec)
+        delete func;
 };
 
-void CompUnitAST::append(DataDeclAST *decl_)
-{
-    DeclOrFunc dorf;
-    dorf.eNum = DorF::DORF_DECL;
-    dorf.decl = decl_;
-    vec.push_back(dorf);
-}
+void CompUnitAST::append(DataDeclAST *decl_) { declVec.push_back(decl_); }
 
-void CompUnitAST::append(FuncDefAST *func_)
-{
-    DeclOrFunc dorf;
-    dorf.eNum = DorF::DORF_FUNC;
-    dorf.func = func_;
-    vec.push_back(dorf);
-}
+void CompUnitAST::append(FuncDefAST *func_) { funcVec.push_back(func_); }
 
 const char *CompUnitAST::getClassName() const { return "CompUnitAST"; }
 
 void CompUnitAST::DumpContent(std::ostream &outStream, int indent) const
 {
-    for (DeclOrFunc dorf : vec)
-    {
-        if (dorf.eNum == DorF::DORF_DECL)
-            dorf.decl->Dump(outStream, indent + 1);
-        if (dorf.eNum == DorF::DORF_FUNC)
-            dorf.func->Dump(outStream, indent + 1);
-    }
+    for (DataDeclAST *decl : declVec)
+        decl->Dump(outStream, indent + 1);
+    for (FuncDefAST *func : funcVec)
+        func->Dump(outStream, indent + 1);
+}
+
+void CompUnitAST::setSymbolTable(SymbolTable *symTab)
+{
+    for (DataDeclAST *decl : declVec)
+        decl->setSymbolTable(symTab);
+    for (FuncDefAST *func : funcVec)
+        func->setSymbolTable(symTab);
 }
 
 /* FuncDefAST */
@@ -138,14 +112,31 @@ void FuncDefAST::DumpContent(std::ostream &outStream, int indent) const
     funcBody->Dump(outStream, indent + 1);
 }
 
+void FuncDefAST::setSymbolTable(SymbolTable *symTab)
+{
+    symTab->currentFuncName = funcName;
+
+    paras->setSymbolTable(symTab);
+
+    funcBody->setSymbolTable(symTab);
+
+    symTab->currentFuncName.clear();
+}
+
 /* BlockAST */
 
-BlockAST::BlockAST() : itemVec() {}
+BlockAST::BlockAST() : itemVec(), vecIndex(), lineIndex() {}
 
 void BlockAST::append(BlockItemAST *item_)
 {
     if (item_)
         itemVec.push_back(item_);
+}
+
+void BlockAST::setIndex(std::vector<int> vecIndex_, int lineIndex_)
+{
+    vecIndex = vecIndex_;
+    lineIndex = lineIndex_;
 }
 
 BlockAST::~BlockAST()
@@ -160,6 +151,15 @@ void BlockAST::DumpContent(std::ostream &outStream, int indent) const
 {
     for (BlockItemAST *elem : itemVec)
         elem->Dump(outStream, indent + 1);
+}
+
+void BlockAST::setSymbolTable(SymbolTable *symTab)
+{
+    symTab->enterBlock();
+    vecIndex = symTab->currentBlockVecIndex;
+    for (auto item : itemVec)
+        item->setSymbolTable(symTab);
+    symTab->leaveBlock();
 }
 
 /* BlockItemAST */
@@ -189,6 +189,8 @@ void BlockItemAST::DumpContent(std::ostream &outStream, int indent) const
     if (itemEnum == BlockItemEnum::BLOCK_STMT)
         stmt->Dump(outStream, indent + 1);
 }
+
+void BlockItemAST::setSymbolTable(SymbolTable *symTab) {}
 
 /* StmtAST */
 
@@ -291,6 +293,8 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
     }
 }
 
+void StmtAST::setSymbolTable(SymbolTable *symTab) {}
+
 /* ExpAST */
 
 ExpAST::ExpAST() : opt(OpEnum::OP_NONE), leftExp(NULL), ptr(NULL) {}
@@ -348,6 +352,131 @@ void ExpAST::DumpContent(std::ostream &outStream, int indent) const
     }
 }
 
+void ExpAST::setSymbolTable(SymbolTable *symTab) {}
+
+int ExpAST::forceCalc(SymbolTable *symTab)
+{
+    int valLeft, valRight, valRes;
+
+    switch (opt)
+    {
+    case OpEnum::OP_PRI:
+        valRight = primaryExp->forceCalc(symTab);
+        valLeft = 0;
+        delete primaryExp;
+        break;
+    case OpEnum::OP_POS:
+    case OpEnum::OP_NEG:
+    case OpEnum::OP_NOT_B:
+    case OpEnum::OP_NOT_L:
+        valRight = rightExp->forceCalc(symTab);
+        delete rightExp;
+        valLeft = 0;
+        break;
+    case OpEnum::OP_E:
+    case OpEnum::OP_NE:
+    case OpEnum::OP_L:
+    case OpEnum::OP_LE:
+    case OpEnum::OP_G:
+    case OpEnum::OP_GE:
+    case OpEnum::OP_ADD:
+    case OpEnum::OP_SUB:
+    case OpEnum::OP_MUL:
+    case OpEnum::OP_DIV:
+    case OpEnum::OP_MOD:
+    case OpEnum::OP_AND_B:
+    case OpEnum::OP_OR_B:
+    case OpEnum::OP_XOR_B:
+    case OpEnum::OP_AND_L:
+    case OpEnum::OP_OR_L:
+        valLeft = leftExp->forceCalc(symTab);
+        valRight = rightExp->forceCalc(symTab);
+        delete leftExp;
+        delete rightExp;
+        break;
+    default:
+        assert(true);
+        break;
+    }
+
+    switch (opt)
+    {
+    case OpEnum::OP_PRI:
+        valRes = valRight;
+        break;
+    case OpEnum::OP_POS:
+        valRes = valRight;
+        break;
+    case OpEnum::OP_NEG:
+        valRes = -valRight;
+        break;
+    case OpEnum::OP_NOT_B:
+        valRes = ~valRight;
+        break;
+    case OpEnum::OP_NOT_L:
+        valRes = !valRight;
+        break;
+    case OpEnum::OP_E:
+        valRes = valLeft == valRight;
+        break;
+    case OpEnum::OP_NE:
+        valRes = valLeft != valRight;
+        break;
+    case OpEnum::OP_L:
+        valRes = valLeft < valRight;
+        break;
+    case OpEnum::OP_LE:
+        valRes = valLeft <= valRight;
+        break;
+    case OpEnum::OP_G:
+        valRes = valLeft > valRight;
+        break;
+    case OpEnum::OP_GE:
+        valRes = valLeft >= valRight;
+        break;
+    case OpEnum::OP_ADD:
+        valRes = valLeft + valRight;
+        break;
+    case OpEnum::OP_SUB:
+        valRes = valLeft - valRight;
+        break;
+    case OpEnum::OP_MUL:
+        valRes = valLeft * valRight;
+        break;
+    case OpEnum::OP_DIV:
+        valRes = valLeft / valRight;
+        break;
+    case OpEnum::OP_MOD:
+        valRes = valLeft % valRight;
+        break;
+    case OpEnum::OP_AND_B:
+        valRes = valLeft & valRight;
+        break;
+    case OpEnum::OP_OR_B:
+        valRes = valLeft | valRight;
+        break;
+    case OpEnum::OP_XOR_B:
+        valRes = valLeft ^ valRight;
+        break;
+    case OpEnum::OP_AND_L:
+        valRes = valLeft && valRight;
+        break;
+    case OpEnum::OP_OR_L:
+        valRes = valLeft || valRight;
+        break;
+    default:
+        valRes = 0;
+        assert(true);
+        break;
+    }
+
+    opt = OpEnum::OP_PRI;
+    leftExp = NULL;
+    primaryExp = new PrimaryExpAST(valRes);
+
+    return valRes;
+}
+
 /* PrimaryExpAST */
 
 PrimaryExpAST::PrimaryExpAST() : type(PrimEnum::PRI_NONE), constVal(0), funcName(), ptr(NULL) {}
@@ -395,6 +524,24 @@ void PrimaryExpAST::DumpContent(std::ostream &outStream, int indent) const
     }
 }
 
+void PrimaryExpAST::setSymbolTable(SymbolTable *symTab) {}
+
+int PrimaryExpAST::forceCalc(SymbolTable *symTab)
+{
+    if (type == PrimEnum::PRI_CONST)
+    {
+        return constVal;
+    }
+    if (type == PrimEnum::PRI_LVAL)
+    {
+        SymbolEntry *sym = symTab->match(lVal->ident, lVal->type, lVal->defi,
+                                         symTab->currentFuncName, symTab->currentBlockVecIndex);
+        assert(sym);
+        return sym->initval;
+    }
+    assert(true);
+    return 0;
+}
 /* DataDeclAST */
 
 DataDeclAST::DataDeclAST() : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), defVec() {}
@@ -430,6 +577,12 @@ void DataDeclAST::DumpContent(std::ostream &outStream, int indent) const
         def->Dump(outStream, indent + 1);
 }
 
+void DataDeclAST::setSymbolTable(SymbolTable *symTab)
+{
+    for (DataDefAST *def : defVec)
+        def->setSymbolTable(symTab);
+}
+
 /* DataDefAST */
 
 DataDefAST::DataDefAST()
@@ -463,6 +616,14 @@ void DataDefAST::DumpContent(std::ostream &outStream, int indent) const
         initval->Dump(outStream, indent + 1);
 }
 
+void DataDefAST::setSymbolTable(SymbolTable *symTab)
+{
+    SymbolEntry *sym =
+        new SymbolEntry(symTab, type, defi, symTab->currentFuncName, symTab->currentBlockVecIndex,
+                        symTab->currentBlockLineIndex, defIdent, initval);
+    symTab->append(sym);
+}
+
 /* FuncFParamsAST */
 
 FuncFParamsAST::FuncFParamsAST() : paraVec() {}
@@ -493,6 +654,14 @@ void FuncFParamsAST::DumpContent(std::ostream &outStream, int indent) const
 
 const char *FuncFParamsAST::getClassName() const { return "FuncFParamsAST"; }
 
+void FuncFParamsAST::setSymbolTable(SymbolTable *symTab)
+{
+    symTab->enterBlock();
+    for (FuncFParamAST *para : paraVec)
+        para->setSymbolTable(symTab);
+    symTab->antiLeaveBlock();
+}
+
 /* FuncFParamAST */
 
 FuncFParamAST::FuncFParamAST() : type(TypeEnum::TYPE_NONE), para(NULL) {}
@@ -508,6 +677,14 @@ void FuncFParamAST::DumpContent(std::ostream &outStream, int indent) const
 }
 
 const char *FuncFParamAST::getClassName() const { return "FuncFParamAST"; }
+
+void FuncFParamAST::setSymbolTable(SymbolTable *symTab)
+{
+    SymbolEntry *sym = new SymbolEntry(symTab, type, para->defi, symTab->currentFuncName,
+                                       symTab->currentBlockVecIndex, symTab->currentBlockLineIndex,
+                                       para, NULL, true);
+    symTab->append(sym);
+}
 
 /* FuncRParamsAST */
 
@@ -539,11 +716,12 @@ void FuncRParamsAST::DumpContent(std::ostream &outStream, int indent) const
 
 const char *FuncRParamsAST::getClassName() const { return "FuncRParamsAST"; }
 
+void FuncRParamsAST::setSymbolTable(SymbolTable *symTab) {}
+
 /* DataLValIdentAST */
 
 DataLValIdentAST::DataLValIdentAST()
-    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(), emptyValStart(false),
-      expVec()
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(), emptyValStart(false), expVec()
 {
 }
 
@@ -583,6 +761,8 @@ void DataLValIdentAST::DumpContent(std::ostream &outStream, int indent) const
 }
 
 const char *DataLValIdentAST::getClassName() const { return "DataLValIdentAST"; }
+
+void DataLValIdentAST::setSymbolTable(SymbolTable *symTab) {}
 
 /* DataInitvalAST */
 
@@ -631,3 +811,5 @@ void DataInitvalAST::DumpContent(std::ostream &outStream, int indent) const
 }
 
 const char *DataInitvalAST::getClassName() const { return "DataInitvalAST"; }
+
+void DataInitvalAST::setSymbolTable(SymbolTable *symTab) {}

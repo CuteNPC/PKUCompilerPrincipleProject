@@ -1,6 +1,10 @@
 #ifndef _KETWORD_HPP_
 #define _KETWORD_HPP_
 
+extern const char *defiName[];
+extern const char *typeName[];
+extern const char *optName[];
+
 enum OpEnum
 {
     OP_NONE,
@@ -71,6 +75,45 @@ enum TypeEnum
     TYPE_VOID,
     TYPE_INT,
     TYPE_CONST,
+};
+
+enum BlockItemEnum
+{
+    BLOCK_NONE,
+    BLOCK_DECL,
+    BLOCK_STMT,
+};
+
+enum StmtEnum
+{
+    STMT_NONE,
+    STMT_EMPTY,
+    STMT_ASSIGN,
+    STMT_EXP,
+    STMT_RET_INT,
+    STMT_RET_VOID,
+    STMT_BLOCK,
+    STMT_IF,
+    STMT_IF_ELSE,
+    STMT_WHILE,
+    STMT_BREAK,
+    STMT_CONT,
+};
+
+enum PrimEnum
+{
+    PRI_NONE,
+    PRI_CONST,
+    PRI_LVAL,
+    PRI_CALL,
+};
+
+enum DefiEnum
+{
+    DEFI_NONE,
+    DEFI_VAR,
+    DEFI_CONST,
+    DEFI_LVAL,
 };
 
 #endif // !_LEX_HPP_
