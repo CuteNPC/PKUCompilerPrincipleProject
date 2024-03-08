@@ -89,6 +89,7 @@ enum StmtEnum
     STMT_NONE,
     STMT_EMPTY,
     STMT_ASSIGN,
+    STMT_ASSIGN_ARRAY,
     STMT_EXP,
     STMT_RET_INT,
     STMT_RET_VOID,

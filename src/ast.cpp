@@ -80,6 +80,10 @@ void CompUnitAST::setSymbolTable(SymbolTable *symTab)
 {
     for (DataDeclAST *decl : declVec)
         decl->setSymbolTable(symTab);
+    for (DataDeclAST *decl : declVec)
+        delete decl;
+    declVec.clear();
+
     for (FuncDefAST *func : funcVec)
         func->setSymbolTable(symTab);
 }
@@ -151,14 +155,32 @@ void BlockAST::DumpContent(std::ostream &outStream, int indent) const
 {
     for (BlockItemAST *elem : itemVec)
         elem->Dump(outStream, indent + 1);
+    for (StmtAST *elem : stmtVec)
+        elem->Dump(outStream, indent + 1);
 }
 
 void BlockAST::setSymbolTable(SymbolTable *symTab)
 {
     symTab->enterBlock();
     vecIndex = symTab->currentBlockVecIndex;
-    for (auto item : itemVec)
+    for (BlockItemAST *item : itemVec)
         item->setSymbolTable(symTab);
+    for (BlockItemAST *item : itemVec)
+    {
+        if (item->itemEnum == BlockItemEnum::BLOCK_DECL)
+        {
+            for (DataDefAST *def : item->decl->defVec)
+                if (def->stmtAfterSym != NULL)
+                {
+                    stmtVec.push_back(def->stmtAfterSym);
+                    def->stmtAfterSym = NULL;
+                }
+            delete item;
+        }
+        if (item->itemEnum == BlockItemEnum::BLOCK_STMT)
+            stmtVec.push_back(item->stmt);
+    }
+    itemVec.clear();
     symTab->leaveBlock();
 }
 
@@ -190,33 +212,51 @@ void BlockItemAST::DumpContent(std::ostream &outStream, int indent) const
         stmt->Dump(outStream, indent + 1);
 }
 
-void BlockItemAST::setSymbolTable(SymbolTable *symTab) {}
+void BlockItemAST::setSymbolTable(SymbolTable *symTab)
+{
+    if (itemEnum == BlockItemEnum::BLOCK_DECL)
+        decl->setSymbolTable(symTab);
+    if (itemEnum == BlockItemEnum::BLOCK_STMT)
+        stmt->setSymbolTable(symTab);
+}
 
 /* StmtAST */
 
-StmtAST::StmtAST() : st(StmtEnum::STMT_NONE), lVal(NULL), ptr(NULL), mainStmt(NULL), elseStmt(NULL)
+StmtAST::StmtAST()
+    : st(StmtEnum::STMT_NONE), lVal(NULL), ptr(NULL), mainStmt(NULL), elseStmt(NULL), initvalArray()
 {
 }
 
-StmtAST::StmtAST(StmtEnum st_) : st(st_), lVal(NULL), ptr(NULL), mainStmt(NULL), elseStmt(NULL) {}
+StmtAST::StmtAST(StmtEnum st_)
+    : st(st_), lVal(NULL), ptr(NULL), mainStmt(NULL), elseStmt(NULL), initvalArray()
+{
+}
 
 StmtAST::StmtAST(DataLValIdentAST *lVal_, ExpAST *lOrExp_)
-    : st(StmtEnum::STMT_ASSIGN), lVal(lVal_), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL)
+    : st(StmtEnum::STMT_ASSIGN), lVal(lVal_), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL),
+      initvalArray()
+{
+}
+
+StmtAST::StmtAST(DataLValIdentAST *lVal_, std::vector<int> initvalArray_)
+    : st(StmtEnum::STMT_ASSIGN_ARRAY), lVal(lVal_), ptr(NULL), mainStmt(NULL), elseStmt(NULL),
+      initvalArray(initvalArray_)
 {
 }
 
 StmtAST::StmtAST(StmtEnum st_, ExpAST *lOrExp_)
-    : st(st_), lVal(NULL), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL)
+    : st(st_), lVal(NULL), lOrExp(lOrExp_), mainStmt(NULL), elseStmt(NULL), initvalArray()
 {
 }
 
 StmtAST::StmtAST(BlockAST *block_)
-    : st(StmtEnum::STMT_BLOCK), lVal(NULL), block(block_), mainStmt(NULL), elseStmt(NULL)
+    : st(StmtEnum::STMT_BLOCK), lVal(NULL), block(block_), mainStmt(NULL), elseStmt(NULL),
+      initvalArray()
 {
 }
 
 StmtAST::StmtAST(StmtEnum st_, ExpAST *lOrExp_, StmtAST *mainStmt_, StmtAST *elseStmt_)
-    : st(st_), lVal(NULL), lOrExp(lOrExp_), mainStmt(mainStmt_), elseStmt(elseStmt_)
+    : st(st_), lVal(NULL), lOrExp(lOrExp_), mainStmt(mainStmt_), elseStmt(elseStmt_), initvalArray()
 {
 }
 
@@ -243,49 +283,57 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
     case STMT_NONE:
         outStream << Indent(indent + 1) << "NONE" << std::endl;
         break;
-    case STMT_EMPTY:;
+    case STMT_EMPTY:
         outStream << Indent(indent + 1) << "STMT_EMPTY" << std::endl;
         break;
-    case STMT_ASSIGN:;
+    case STMT_ASSIGN:
         outStream << Indent(indent + 1) << "STMT_ASSIGN" << std::endl;
         lVal->Dump(outStream, indent + 1);
         lOrExp->Dump(outStream, indent + 1);
         break;
-    case STMT_EXP:;
+    case STMT_ASSIGN_ARRAY:
+        outStream << Indent(indent + 1) << "STMT_ASSIGN_ARRAY" << std::endl;
+        lVal->Dump(outStream, indent + 1);
+        outStream << Indent(indent + 1) << "InitvalArray: [";
+        for (int elem : initvalArray)
+            outStream << elem << ", ";
+        outStream << "]" << std::endl;
+        break;
+    case STMT_EXP:
         outStream << Indent(indent + 1) << "STMT_EXP" << std::endl;
         lOrExp->Dump(outStream, indent + 1);
         break;
-    case STMT_RET_INT:;
+    case STMT_RET_INT:
         outStream << Indent(indent + 1) << "STMT_RET_INT" << std::endl;
         lOrExp->Dump(outStream, indent + 1);
         break;
-    case STMT_RET_VOID:;
+    case STMT_RET_VOID:
         outStream << Indent(indent + 1) << "STMT_RET_VOID" << std::endl;
         break;
-    case STMT_BLOCK:;
+    case STMT_BLOCK:
         outStream << Indent(indent + 1) << "STMT_BLOCK" << std::endl;
         block->Dump(outStream, indent + 1);
         break;
-    case STMT_IF:;
+    case STMT_IF:
         outStream << Indent(indent + 1) << "STMT_IF" << std::endl;
         lOrExp->Dump(outStream, indent + 1);
         mainStmt->Dump(outStream, indent + 1);
         break;
-    case STMT_IF_ELSE:;
+    case STMT_IF_ELSE:
         outStream << Indent(indent + 1) << "STMT_IF_ELSE" << std::endl;
         lOrExp->Dump(outStream, indent + 1);
         mainStmt->Dump(outStream, indent + 1);
         elseStmt->Dump(outStream, indent + 1);
         break;
-    case STMT_WHILE:;
+    case STMT_WHILE:
         outStream << Indent(indent + 1) << "STMT_WHILE" << std::endl;
         lOrExp->Dump(outStream, indent + 1);
         mainStmt->Dump(outStream, indent + 1);
         break;
-    case STMT_BREAK:;
+    case STMT_BREAK:
         outStream << Indent(indent + 1) << "STMT_BREAK" << std::endl;
         break;
-    case STMT_CONT:;
+    case STMT_CONT:
         outStream << Indent(indent + 1) << "STMT_CONT" << std::endl;
         break;
     default:
@@ -293,7 +341,47 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
     }
 }
 
-void StmtAST::setSymbolTable(SymbolTable *symTab) {}
+void StmtAST::setSymbolTable(SymbolTable *symTab)
+{
+    // TODO not finished
+
+    switch (st)
+    {
+    case STMT_NONE:
+        break;
+    case STMT_EMPTY:
+        break;
+    case STMT_ASSIGN:
+        break;
+    case STMT_ASSIGN_ARRAY:
+        break;
+    case STMT_EXP:
+        break;
+    case STMT_RET_INT:
+        break;
+    case STMT_RET_VOID:
+        break;
+    case STMT_BLOCK:
+        block->setSymbolTable(symTab);
+        break;
+    case STMT_IF:
+        mainStmt->setSymbolTable(symTab);
+        break;
+    case STMT_IF_ELSE:
+        mainStmt->setSymbolTable(symTab);
+        elseStmt->setSymbolTable(symTab);
+        break;
+    case STMT_WHILE:
+        mainStmt->setSymbolTable(symTab);
+        break;
+    case STMT_BREAK:
+        break;
+    case STMT_CONT:
+        break;
+    default:
+        break;
+    }
+}
 
 /* ExpAST */
 
@@ -586,13 +674,14 @@ void DataDeclAST::setSymbolTable(SymbolTable *symTab)
 /* DataDefAST */
 
 DataDefAST::DataDefAST()
-    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), defIdent(NULL), initval(NULL)
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), defIdent(NULL), initval(NULL),
+      stmtAfterSym(NULL)
 {
 }
 
 DataDefAST::DataDefAST(DefiEnum defi_, TypeEnum type_, DataLValIdentAST *defIdent_,
                        DataInitvalAST *initval_)
-    : defi(defi_), type(type_), defIdent(defIdent_), initval(initval_)
+    : defi(defi_), type(type_), defIdent(defIdent_), initval(initval_), stmtAfterSym(NULL)
 {
 }
 
@@ -604,6 +693,7 @@ DataDefAST::~DataDefAST()
         delete defIdent;
     if (initval)
         delete initval;
+    assert(stmtAfterSym == NULL);
 }
 
 void DataDefAST::DumpContent(std::ostream &outStream, int indent) const
@@ -614,13 +704,65 @@ void DataDefAST::DumpContent(std::ostream &outStream, int indent) const
         defIdent->Dump(outStream, indent + 1);
     if (initval)
         initval->Dump(outStream, indent + 1);
+    if (stmtAfterSym)
+        stmtAfterSym->Dump(outStream, indent + 1);
 }
 
 void DataDefAST::setSymbolTable(SymbolTable *symTab)
 {
-    SymbolEntry *sym =
-        new SymbolEntry(symTab, type, defi, symTab->currentFuncName, symTab->currentBlockVecIndex,
-                        symTab->currentBlockLineIndex, defIdent, initval);
+    /*全局变量：放入符号表中，符号表有初值，不设置stmtAfterSym*/
+    /*全局数组：放入符号表中，符号表有初值，不设置stmtAfterSym*/
+    /*局部变量：放入符号表中，符号表没有初值，设置stmtAfterSym*/
+    /*局部数组：放入符号表中，符号表没有初值，设置stmtAfterSym*/
+
+    vector<int> arrayDimVec_ = defIdent->getArrayDim(symTab);
+    std::string ident_ = defIdent->ident;
+    int arrayDimCum = 1;
+    for (int e : arrayDimVec_)
+        arrayDimCum *= e;
+
+    int initval_ = 0;
+    vector<int> initvalArray_;
+    if (symTab->currentBlockVecIndex.size() == 0)
+    {
+        if (arrayDimVec_.size() == 0)
+        {
+            /*全局变量*/
+            if (initval != NULL)
+                initval_ = initval->exp->forceCalc(symTab);
+        }
+        else
+        {
+            /*全局数组*/
+            if (initval != NULL)
+                initvalArray_ = initval->getInitVector(arrayDimVec_);
+            else
+                initvalArray_ = vector<int>(arrayDimCum);
+        }
+    }
+    else if (initval != NULL)
+    {
+        if (arrayDimVec_.size() == 0)
+        {
+            /*局部变量*/
+            stmtAfterSym = new StmtAST(defIdent, initval->exp);
+            initval->exp = NULL;
+            defIdent = NULL;
+        }
+        else
+        {
+            /*局部数组*/
+            for (ExpAST *&exp_ : defIdent->expVec)
+                delete exp_;
+            defIdent->expVec.clear();
+            vector<int> initvalArray__ = initval->getInitVector(arrayDimVec_);
+            stmtAfterSym = new StmtAST(defIdent, initvalArray__);
+            defIdent = NULL;
+        }
+    }
+    SymbolEntry *sym = new SymbolEntry(symTab, type, defi, symTab->currentFuncName,
+                                       symTab->currentBlockVecIndex, symTab->currentBlockLineIndex,
+                                       ident_, arrayDimVec_, initval_, initvalArray_, false);
     symTab->append(sym);
 }
 
@@ -680,9 +822,9 @@ const char *FuncFParamAST::getClassName() const { return "FuncFParamAST"; }
 
 void FuncFParamAST::setSymbolTable(SymbolTable *symTab)
 {
-    SymbolEntry *sym = new SymbolEntry(symTab, type, para->defi, symTab->currentFuncName,
+    SymbolEntry *sym = new SymbolEntry(symTab, para->type, para->defi, symTab->currentFuncName,
                                        symTab->currentBlockVecIndex, symTab->currentBlockLineIndex,
-                                       para, NULL, true);
+                                       para->ident, para->getArrayDim(), 0, vector<int>(), true);
     symTab->append(sym);
 }
 
@@ -764,6 +906,19 @@ const char *DataLValIdentAST::getClassName() const { return "DataLValIdentAST"; 
 
 void DataLValIdentAST::setSymbolTable(SymbolTable *symTab) {}
 
+vector<int> DataLValIdentAST::getArrayDim(SymbolTable *symTab)
+{
+    vector<int> arrayDimVec;
+    if (emptyValStart)
+        arrayDimVec.push_back(-1);
+    for (ExpAST *&exp_ : expVec)
+    {
+        int expval = exp_->forceCalc(symTab);
+        arrayDimVec.push_back(expval);
+    }
+    return arrayDimVec;
+}
+
 /* DataInitvalAST */
 
 DataInitvalAST::DataInitvalAST()
@@ -813,3 +968,28 @@ void DataInitvalAST::DumpContent(std::ostream &outStream, int indent) const
 const char *DataInitvalAST::getClassName() const { return "DataInitvalAST"; }
 
 void DataInitvalAST::setSymbolTable(SymbolTable *symTab) {}
+
+vector<int> DataInitvalAST::getInitVector(std::vector<int> arrayDim, SymbolTable *symTab)
+{
+    // TODO
+    int cum = 1;
+    for (auto e : arrayDim)
+        cum *= e;
+    std::vector<int> vec;
+    dfs(vec, symTab);
+    int len = vec.size();
+    for (int i = len; i < cum; i++)
+        vec.push_back(0);
+    for (int i = cum; i < len; i++)
+        vec.pop_back();
+    return vec;
+}
+
+void DataInitvalAST::dfs(std::vector<int> &vec, SymbolTable *symTab)
+{
+    if (exp)
+        vec.push_back(exp->forceCalc(symTab));
+    else
+        for (DataInitvalAST *e : initVec)
+            e->dfs(vec, symTab);
+}

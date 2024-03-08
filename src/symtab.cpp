@@ -3,44 +3,18 @@
 
 SymbolEntry::SymbolEntry()
     : symTab(NULL), type(TypeEnum::TYPE_INT), defi(DefiEnum::DEFI_NONE), ident(), funcName(),
-      blockVecIndex(), blockLineIndex(0), arrayDimVec(), initvalArray(NULL), funcPara(false)
+      blockVecIndex(), blockLineIndex(0), arrayDimVec(), initvalArray(), funcPara(false)
 {
 }
 
-SymbolEntry::SymbolEntry(SymbolTable *symTab_, TypeEnum type_, DefiEnum defi_, string funcName_,
-                         vector<int> blockVecIndex_, int blockLineIndex_,
-                         DataLValIdentAST *defIdent_, DataInitvalAST *initval_, bool funcPara_)
-    : symTab(symTab_), type(type_), defi(defi_), funcName(funcName_), blockVecIndex(blockVecIndex_),
-      blockLineIndex(blockLineIndex_), initval(0), initvalArray(NULL), funcPara(funcPara_)
+SymbolEntry::SymbolEntry(SymbolTable *symTab_, TypeEnum type_, DefiEnum defi_,
+                         std::string funcName_, vector<int> blockVecIndex_, int blockLineIndex_,
+                         std::string ident_, std::vector<int> arrayDimVec_, int initval_,
+                         std::vector<int> initvalArray_, bool funcPara_)
+    : symTab(symTab_), type(type_), defi(defi_), ident(ident_), funcName(funcName_),
+      blockVecIndex(blockVecIndex_), blockLineIndex(blockLineIndex_), arrayDimVec(arrayDimVec_),
+      initval(initval_), initvalArray(initvalArray_), funcPara(funcPara_)
 {
-    ident = defIdent_->ident;
-    int arrayDimVecCum = 1;
-    if (defIdent_->emptyValStart)
-        arrayDimVec.push_back(-1);
-    for (ExpAST *&exp_ : defIdent_->expVec)
-    {
-        int expval = exp_->forceCalc(symTab);
-        arrayDimVec.push_back(expval);
-        arrayDimVecCum *= expval;
-    }
-    if (initval_)
-    {
-        if (defIdent_->expVec.size() == 0)
-        {
-            initval = initval_->exp->forceCalc(symTab);
-            initvalArray = NULL;
-        }
-        else
-        {
-            initval = 0;
-            initvalArray = new int[arrayDimVecCum];
-            // for (DataInitvalAST *init : initval_->initVec)
-            // {
-            // init = init;
-            // /*TODO 设置初始化信息*/;
-            // }
-        }
-    }
 }
 
 SymbolEntry::~SymbolEntry() {}
@@ -58,10 +32,50 @@ bool SymbolEntry::isEmptyStartArray() const
     return (arrayDimVec.front() == -1);
 }
 
+void SymbolEntry::Dump(std::ostream &outStream) const
+{
+    outStream << "    "
+              << "Defi : " << defiName[defi] << std::endl;
+    outStream << "    "
+              << "Type : " << typeName[type] << std::endl;
+    outStream << "    "
+              << "Ident: " << ident << std::endl;
+    outStream << "    "
+              << "Func : " << funcName << std::endl;
+    outStream << "    "
+              << "funcPara: " << (funcPara ? "True" : "False") << std::endl;
+    outStream << "    "
+              << "initVal : " << initval << std::endl;
+
+    outStream << "    "
+              << "blockVecIndex: [";
+    for (int e : blockVecIndex)
+        outStream << e << ", ";
+    outStream << ']' << std::endl;
+
+    outStream << "    "
+              << "arrayDimVec  : [";
+    for (int e : arrayDimVec)
+        outStream << e << ", ";
+    outStream << ']' << std::endl;
+}
+
+std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &entry)
+{
+    entry.Dump(outStream);
+    return outStream;
+}
+
 SymbolTable::SymbolTable()
     : currentFuncName(), currentBlockVecIndex(), currentBlockVecIndexTail(0),
       currentBlockLineIndex(0), symVec()
 {
+}
+
+SymbolTable::~SymbolTable()
+{
+    for (SymbolEntry *sym : symVec)
+        delete sym;
 }
 
 void SymbolTable::append(SymbolEntry *sym_) { symVec.push_back(sym_); }
@@ -111,8 +125,20 @@ SymbolEntry *SymbolTable::match(string ident_, TypeEnum type_, DefiEnum defi_, s
     return NULL;
 }
 
-SymbolTable::~SymbolTable()
+void SymbolTable::Dump(std::ostream &outStream) const
 {
-    for (SymbolEntry *sym : symVec)
-        delete sym;
+    outStream << "SymbolTable: " << std::endl;
+    int cnt = 0;
+    for (SymbolEntry *elem : symVec)
+    {
+        outStream << cnt << std::endl;
+        elem->Dump(outStream);
+        cnt++;
+    }
+}
+
+std::ostream &operator<<(std::ostream &outStream, const SymbolTable &symTab)
+{
+    symTab.Dump(outStream);
+    return outStream;
 }

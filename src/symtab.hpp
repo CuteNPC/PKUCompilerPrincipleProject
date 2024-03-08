@@ -2,6 +2,7 @@
 #define _SYMTAB_HPP_
 
 #include "keyword.hpp"
+#include <iostream>
 #include <map>
 #include <stdint.h>
 #include <string>
@@ -27,18 +28,21 @@ class SymbolEntry
     int blockLineIndex;
     vector<int> arrayDimVec;
     int initval;
-    int* initvalArray;
+    vector<int> initvalArray;
     bool funcPara;
 
     SymbolEntry();
-    SymbolEntry(SymbolTable *symTab_, TypeEnum type_, DefiEnum defi_, string funcName_,
-                vector<int> blockVecIndex_, int blockLineIndex_, DataLValIdentAST *defIdent_,
-                DataInitvalAST *initval_ = NULL, bool funcPara_ = false);
+    SymbolEntry(SymbolTable *symTab_, TypeEnum type_, DefiEnum defi_, std::string funcName_,
+                vector<int> blockVecIndex_, int blockLineIndex_, std::string ident_,
+                std::vector<int> arrayDimVec_, int initval_ = 0,
+                std::vector<int> initvalArray_ = std::vector<int>(), bool funcPara_ = false);
     ~SymbolEntry();
     bool isArray() const;
     bool isGlobal() const;
     bool isFuncPara() const;
     bool isEmptyStartArray() const;
+    void Dump(std::ostream &outStream = std::cout) const;
+    friend std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &ast);
 };
 
 class SymbolTable
@@ -51,6 +55,7 @@ class SymbolTable
     vector<SymbolEntry *> symVec;
 
     SymbolTable();
+    ~SymbolTable();
     SymbolEntry *match(string ident, TypeEnum type_, DefiEnum defi_, string funcName_,
                        const vector<int> &blockVecIndex_) const;
     void append(SymbolEntry *sym_);
@@ -58,7 +63,8 @@ class SymbolTable
     void leaveBlock();
     void antiLeaveBlock();
     vector<SymbolEntry *> &Vec();
-    ~SymbolTable();
+    void Dump(std::ostream &outStream = std::cout) const;
+    friend std::ostream &operator<<(std::ostream &outStream, const SymbolTable &ast);
 };
 
 #endif // !_SYMTAB_HPP_

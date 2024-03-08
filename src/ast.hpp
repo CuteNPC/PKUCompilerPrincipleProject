@@ -2,9 +2,9 @@
 #ifndef _AST_HPP_
 #define _AST_HPP_
 
+#include "keyword.hpp"
 #include <fstream>
 #include <iostream>
-#include "keyword.hpp"
 #include <memory>
 #include <vector>
 
@@ -78,6 +78,7 @@ class BlockAST : public BaseAST
 {
   public:
     std::vector<BlockItemAST *> itemVec;
+    std::vector<StmtAST *> stmtVec;
     std::vector<int> vecIndex;
     int lineIndex;
     BlockAST();
@@ -121,9 +122,11 @@ class StmtAST : public BaseAST
     };
     StmtAST *mainStmt;
     StmtAST *elseStmt;
+    std::vector<int> initvalArray;
     StmtAST();
     StmtAST(StmtEnum st_);
     StmtAST(DataLValIdentAST *lVal_, ExpAST *lOrExp_);
+    StmtAST(DataLValIdentAST *lVal_, std::vector<int> initvalArray_);
     StmtAST(StmtEnum st_, ExpAST *lOrExp_);
     StmtAST(BlockAST *block_);
     StmtAST(StmtEnum st_, ExpAST *lOrExp_, StmtAST *mainStmt_, StmtAST *elseStmt_ = NULL);
@@ -203,6 +206,7 @@ class DataDefAST : public BaseAST
     TypeEnum type;
     DataLValIdentAST *defIdent;
     DataInitvalAST *initval;
+    StmtAST *stmtAfterSym;
     DataDefAST();
     DataDefAST(DefiEnum defi_, TypeEnum type_, DataLValIdentAST *defIdent_,
                DataInitvalAST *initval_ = NULL);
@@ -269,6 +273,7 @@ class DataLValIdentAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    std::vector<int> getArrayDim(SymbolTable *symTab = NULL);
 };
 
 class DataInitvalAST : public BaseAST
@@ -286,6 +291,8 @@ class DataInitvalAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    std::vector<int> getInitVector(std::vector<int> arrayDim, SymbolTable *symTab = NULL);
+    void dfs(std::vector<int> &vec, SymbolTable *symTab = NULL);
 };
 
 #endif // !_AST_HPP_
