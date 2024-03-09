@@ -1,6 +1,8 @@
 #include "symtab.hpp"
 #include "ast.hpp"
 
+/* SymbolEntry */
+
 SymbolEntry::SymbolEntry()
     : symTab(NULL), type(TypeEnum::TYPE_INT), defi(DefiEnum::DEFI_NONE), ident(), funcName(),
       blockVecIndex(), blockLineIndex(0), arrayDimVec(), initvalArray(), funcPara(false)
@@ -66,6 +68,8 @@ std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &entry)
     return outStream;
 }
 
+/* SymbolTable */
+
 SymbolTable::SymbolTable()
     : currentFuncName(), currentBlockVecIndex(), currentBlockVecIndexTail(0),
       currentBlockLineIndex(0), symVec()
@@ -76,6 +80,14 @@ SymbolTable::~SymbolTable()
 {
     for (SymbolEntry *sym : symVec)
         delete sym;
+}
+
+void SymbolTable::resetCursor()
+{
+    currentFuncName.clear();
+    currentBlockVecIndex.clear();
+    currentBlockVecIndexTail = 0;
+    currentBlockLineIndex = 0;
 }
 
 void SymbolTable::append(SymbolEntry *sym_) { symVec.push_back(sym_); }
@@ -125,6 +137,13 @@ SymbolEntry *SymbolTable::match(string ident_, TypeEnum type_, DefiEnum defi_, s
     return NULL;
 }
 
+void SymbolTable::buildFrom(CompUnitAST *ast)
+{
+    resetCursor();
+    ast->setSymbolTable(this);
+    resetCursor();
+}
+
 void SymbolTable::Dump(std::ostream &outStream) const
 {
     outStream << "SymbolTable: " << std::endl;
@@ -142,3 +161,5 @@ std::ostream &operator<<(std::ostream &outStream, const SymbolTable &symTab)
     symTab.Dump(outStream);
     return outStream;
 }
+
+/* END */

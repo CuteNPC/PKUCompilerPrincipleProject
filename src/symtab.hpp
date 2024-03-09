@@ -15,6 +15,7 @@ class SymbolEntry;
 class SymbolTable;
 class DataLValIdentAST;
 class DataInitvalAST;
+class CompUnitAST;
 
 class SymbolEntry
 {
@@ -51,7 +52,7 @@ class SymbolTable
     string currentFuncName;
     vector<int> currentBlockVecIndex;
     int currentBlockVecIndexTail;
-    int currentBlockLineIndex;
+    int currentBlockLineIndex; /* no used */
     vector<SymbolEntry *> symVec;
 
     SymbolTable();
@@ -63,6 +64,8 @@ class SymbolTable
     void leaveBlock();
     void antiLeaveBlock();
     vector<SymbolEntry *> &Vec();
+    void buildFrom(CompUnitAST *ast);
+    void resetCursor();
     void Dump(std::ostream &outStream = std::cout) const;
     friend std::ostream &operator<<(std::ostream &outStream, const SymbolTable &ast);
 };

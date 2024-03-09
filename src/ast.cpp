@@ -1,10 +1,13 @@
 #include "ast.hpp"
 #include "define.hpp"
+#include "irbuilder.hpp"
 #include "symtab.hpp"
 #include <assert.h>
 #include <iomanip>
 
 using namespace std;
+
+/* Indent */
 
 class Indent
 {
@@ -23,6 +26,8 @@ std::ostream &operator<<(std::ostream &outStream, const Indent &indent)
         outStream << DUMP_INDENT_STRING;
     return outStream;
 }
+
+/* BaseAST */
 
 void BaseAST::Dump(std::ostream &outStream, int indent) const
 {
@@ -88,6 +93,13 @@ void CompUnitAST::setSymbolTable(SymbolTable *symTab)
         func->setSymbolTable(symTab);
 }
 
+void CompUnitAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    /* TODO 构建 全局声明*/
+    for (FuncDefAST *func : funcVec)
+        func->buildIR(irBuilder, symTab);
+}
+
 /* FuncDefAST */
 
 FuncDefAST::FuncDefAST() : funcType(TypeEnum::TYPE_NONE), funcName(), funcBody(NULL){};
@@ -119,12 +131,21 @@ void FuncDefAST::DumpContent(std::ostream &outStream, int indent) const
 void FuncDefAST::setSymbolTable(SymbolTable *symTab)
 {
     symTab->currentFuncName = funcName;
-
     paras->setSymbolTable(symTab);
-
     funcBody->setSymbolTable(symTab);
-
     symTab->currentFuncName.clear();
+}
+
+void FuncDefAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    irBuilder->startFunc();
+
+    /*TODO 初始化函数信息*/
+    symTab->currentFuncName = funcName;
+    funcBody->buildIR(irBuilder, symTab);
+    symTab->currentFuncName.clear();
+
+    irBuilder->endFunc();
 }
 
 /* BlockAST */
@@ -184,6 +205,15 @@ void BlockAST::setSymbolTable(SymbolTable *symTab)
     symTab->leaveBlock();
 }
 
+void BlockAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    symTab->enterBlock();
+    /*TODO 查找声明，确定是否分配空间*/
+    for (StmtAST *stmt : stmtVec)
+        stmt->buildIR(irBuilder, symTab);
+    symTab->leaveBlock();
+}
+
 /* BlockItemAST */
 
 BlockItemAST::BlockItemAST() : itemEnum(BlockItemEnum::BLOCK_NONE), ptr(NULL) {}
@@ -219,6 +249,8 @@ void BlockItemAST::setSymbolTable(SymbolTable *symTab)
     if (itemEnum == BlockItemEnum::BLOCK_STMT)
         stmt->setSymbolTable(symTab);
 }
+
+void BlockItemAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 /* StmtAST */
 
@@ -343,8 +375,6 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
 
 void StmtAST::setSymbolTable(SymbolTable *symTab)
 {
-    // TODO not finished
-
     switch (st)
     {
     case STMT_NONE:
@@ -377,6 +407,58 @@ void StmtAST::setSymbolTable(SymbolTable *symTab)
     case STMT_BREAK:
         break;
     case STMT_CONT:
+        break;
+    default:
+        break;
+    }
+}
+
+void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    std::string assignIRIdent;
+    switch (st)
+    {
+    case STMT_NONE:
+        break;
+    case STMT_EMPTY:
+        break;
+    case STMT_ASSIGN:
+        assignIRIdent = lOrExp->buildIRforExp(irBuilder, symTab);
+        /*TODO 如果是变量，一条store*/
+        /*TODO 如果是数组，一系列getelemptr，一条store*/
+        break;
+    case STMT_ASSIGN_ARRAY:
+        /*TODO*/
+        break;
+    case STMT_EXP:
+        lOrExp->buildIRforExp(irBuilder, symTab);
+        /*TODO？*/
+        break;
+    case STMT_RET_INT:
+        lOrExp->buildIRforExp(irBuilder, symTab);
+        /*TODO ret语句，分裂块*/
+        break;
+    case STMT_RET_VOID:
+        /*TODO ret语句，分裂块*/
+        break;
+    case STMT_BLOCK:
+        block->buildIR(irBuilder, symTab);
+        /*TODO*/
+        break;
+    case STMT_IF:
+        /*TODO IF 分裂块*/
+        break;
+    case STMT_IF_ELSE:
+        /*TODO IF ELSE 分裂块*/
+        break;
+    case STMT_WHILE:
+        /*TODO WHILE 分裂块 记录当前while到irBuilder里*/
+        break;
+    case STMT_BREAK:
+        /*TODO BREAK 分裂块 从irBuilder读取结束位置*/
+        break;
+    case STMT_CONT:
+        /*TODO CONT 分裂块 从irBuilder读取测试位置*/
         break;
     default:
         break;
@@ -565,6 +647,14 @@ int ExpAST::forceCalc(SymbolTable *symTab)
     return valRes;
 }
 
+void ExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
+
+std::string ExpAST::buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    /*TODO TODO TODO TODO TODO TODO */
+    return;
+}
+
 /* PrimaryExpAST */
 
 PrimaryExpAST::PrimaryExpAST() : type(PrimEnum::PRI_NONE), constVal(0), funcName(), ptr(NULL) {}
@@ -630,6 +720,15 @@ int PrimaryExpAST::forceCalc(SymbolTable *symTab)
     assert(true);
     return 0;
 }
+
+void PrimaryExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
+
+std::string PrimaryExpAST::buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    /*TODO TODO TODO TODO TODO TODO */
+    return;
+}
+
 /* DataDeclAST */
 
 DataDeclAST::DataDeclAST() : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), defVec() {}
@@ -670,6 +769,8 @@ void DataDeclAST::setSymbolTable(SymbolTable *symTab)
     for (DataDefAST *def : defVec)
         def->setSymbolTable(symTab);
 }
+
+void DataDeclAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 /* DataDefAST */
 
@@ -766,6 +867,8 @@ void DataDefAST::setSymbolTable(SymbolTable *symTab)
     symTab->append(sym);
 }
 
+void DataDefAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
+
 /* FuncFParamsAST */
 
 FuncFParamsAST::FuncFParamsAST() : paraVec() {}
@@ -804,6 +907,8 @@ void FuncFParamsAST::setSymbolTable(SymbolTable *symTab)
     symTab->antiLeaveBlock();
 }
 
+void FuncFParamsAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
+
 /* FuncFParamAST */
 
 FuncFParamAST::FuncFParamAST() : type(TypeEnum::TYPE_NONE), para(NULL) {}
@@ -827,6 +932,8 @@ void FuncFParamAST::setSymbolTable(SymbolTable *symTab)
                                        para->ident, para->getArrayDim(), 0, vector<int>(), true);
     symTab->append(sym);
 }
+
+void FuncFParamAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 /* FuncRParamsAST */
 
@@ -859,6 +966,8 @@ void FuncRParamsAST::DumpContent(std::ostream &outStream, int indent) const
 const char *FuncRParamsAST::getClassName() const { return "FuncRParamsAST"; }
 
 void FuncRParamsAST::setSymbolTable(SymbolTable *symTab) {}
+
+void FuncRParamsAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 /* DataLValIdentAST */
 
@@ -918,6 +1027,8 @@ vector<int> DataLValIdentAST::getArrayDim(SymbolTable *symTab)
     }
     return arrayDimVec;
 }
+
+void DataLValIdentAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 /* DataInitvalAST */
 
@@ -993,3 +1104,7 @@ void DataInitvalAST::dfs(std::vector<int> &vec, SymbolTable *symTab)
         for (DataInitvalAST *e : initVec)
             e->dfs(vec, symTab);
 }
+
+void DataInitvalAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
+
+/* END */

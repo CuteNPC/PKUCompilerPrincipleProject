@@ -1,6 +1,7 @@
 #include "arg.hpp"
 #include "ast.hpp"
 #include "define.hpp"
+#include "irbuilder.hpp"
 #include "koopa.h"
 #include "symtab.hpp"
 #include "yy.hpp"
@@ -14,19 +15,23 @@ int main(int argc, const char *argv[])
 
     CompUnitAST *ast = yyparse(args.inputFile());
 
-    SymbolTable *symTab = new SymbolTable();
-
     args.ostream() << *ast << std::endl;
 
-    ofstream symInfoFile("temp/sym.txt");
+    SymbolTable *symTab = new SymbolTable();
 
-    ast->setSymbolTable(symTab);
+    symTab->buildFrom(ast);
+
+    ofstream symInfoFile("temp/sym.txt");
 
     symInfoFile << *symTab << std::endl;
 
     ofstream astInfoFile("temp/res2.txt");
 
     astInfoFile << *ast << std::endl;
+
+    IRBuilder *irBuilder = new IRBuilder();
+
+    irBuilder->buildFrom(ast, symTab);
 
     return 0;
 }

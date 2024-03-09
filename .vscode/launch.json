@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv9/10_arr_in_loop.c",
+                "testcases/lv6/2_multiple_if_else.c",
                 "-o",
                 "temp/res.txt"
             ],

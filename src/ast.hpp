@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 
+class IRBuilder;
+
 class SymbolTable;
 class SymbolEntry;
 
@@ -37,6 +39,7 @@ class BaseAST
     virtual const char *getClassName() const = 0;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const = 0;
     virtual void setSymbolTable(SymbolTable *symTab) = 0;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) = 0;
     friend std::ostream &operator<<(std::ostream &outStream, const BaseAST &ast);
 };
 
@@ -54,6 +57,7 @@ class CompUnitAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class FuncDefAST : public BaseAST
@@ -72,6 +76,7 @@ class FuncDefAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class BlockAST : public BaseAST
@@ -88,6 +93,7 @@ class BlockAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class BlockItemAST : public BaseAST
@@ -107,6 +113,7 @@ class BlockItemAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class StmtAST : public BaseAST
@@ -134,6 +141,7 @@ class StmtAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class ExpAST : public BaseAST
@@ -156,6 +164,8 @@ class ExpAST : public BaseAST
     virtual const char *getClassName() const override;
     int forceCalc(SymbolTable *symTab);
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
+    std::string buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class PrimaryExpAST : public BaseAST
@@ -182,6 +192,8 @@ class PrimaryExpAST : public BaseAST
     virtual const char *getClassName() const override;
     int forceCalc(SymbolTable *symTab);
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
+    std::string buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class DataDeclAST : public BaseAST
@@ -197,6 +209,7 @@ class DataDeclAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class DataDefAST : public BaseAST
@@ -214,6 +227,7 @@ class DataDefAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class FuncFParamsAST : public BaseAST
@@ -227,6 +241,7 @@ class FuncFParamsAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class FuncFParamAST : public BaseAST
@@ -240,6 +255,7 @@ class FuncFParamAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class FuncRParamsAST : public BaseAST
@@ -253,6 +269,7 @@ class FuncRParamsAST : public BaseAST
     virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class DataLValIdentAST : public BaseAST
@@ -274,6 +291,7 @@ class DataLValIdentAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     std::vector<int> getArrayDim(SymbolTable *symTab = NULL);
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 class DataInitvalAST : public BaseAST
@@ -293,6 +311,7 @@ class DataInitvalAST : public BaseAST
     virtual void setSymbolTable(SymbolTable *symTab) override;
     std::vector<int> getInitVector(std::vector<int> arrayDim, SymbolTable *symTab = NULL);
     void dfs(std::vector<int> &vec, SymbolTable *symTab = NULL);
+    virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
 #endif // !_AST_HPP_
