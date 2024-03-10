@@ -136,9 +136,9 @@ void FuncDefAST::setSymbolTable(SymbolTable *symTab)
 
 void FuncDefAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    irBuilder->startFunc();
+    irBuilder->startFunc(funcName, std::string(),
+                         std::string(funcType == TypeEnum::TYPE_INT ? ": i32" : ""));
 
-    /*TODO 初始化函数信息*/
     symTab->currentFuncName = funcName;
     funcBody->buildIR(irBuilder, symTab);
     symTab->currentFuncName.clear();
@@ -207,6 +207,7 @@ void BlockAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
     symTab->enterBlock();
     /*TODO 查找声明，确定是否分配空间*/
+    /*还是得保留decl形式？不然鬼知道什么时候分配？*/
     for (StmtAST *stmt : stmtVec)
         stmt->buildIR(irBuilder, symTab);
     symTab->leaveBlock();
@@ -367,6 +368,7 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
         outStream << Indent(indent + 1) << "STMT_CONT" << std::endl;
         break;
     default:
+        assert(false);
         break;
     }
 }
@@ -407,58 +409,98 @@ void StmtAST::setSymbolTable(SymbolTable *symTab)
     case STMT_CONT:
         break;
     default:
+        assert(false);
         break;
     }
 }
 
 void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    std::string assignIRIdent;
     switch (st)
     {
     case STMT_NONE:
-        break;
+    {
+    }
+    break;
     case STMT_EMPTY:
-        break;
+    {
+    }
+    break;
     case STMT_ASSIGN:
-        assignIRIdent = lOrExp->buildIRforExp(irBuilder, symTab);
+    {
+        std::string assignIRIdent = lOrExp->buildIRRetString(irBuilder, symTab);
         /*TODO 如果是变量，一条store*/
         /*TODO 如果是数组，一系列getelemptr，一条store*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_ASSIGN_ARRAY:
+    {
         /*TODO*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_EXP:
-        lOrExp->buildIRforExp(irBuilder, symTab);
+    {
+        lOrExp->buildIRRetString(irBuilder, symTab);
         /*TODO？*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_RET_INT:
-        lOrExp->buildIRforExp(irBuilder, symTab);
-        /*TODO ret语句，分裂块*/
-        break;
+    {
+        std::string retValue = lOrExp->buildIRRetString(irBuilder, symTab);
+        std::string stmt = std::string("ret ") + retValue;
+        irBuilder->pushStmt(stmt);
+        irBuilder->pushBlock(true);
+    }
+    break;
     case STMT_RET_VOID:
-        /*TODO ret语句，分裂块*/
-        break;
+    {
+        std::string stmt = std::string("ret");
+        irBuilder->pushStmt(stmt);
+        irBuilder->pushBlock(true);
+    }
+    break;
     case STMT_BLOCK:
+    {
         block->buildIR(irBuilder, symTab);
         /*TODO*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_IF:
+    {
         /*TODO IF 分裂块*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_IF_ELSE:
+    {
         /*TODO IF ELSE 分裂块*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_WHILE:
+    {
         /*TODO WHILE 分裂块 记录当前while到irBuilder里*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_BREAK:
+    {
         /*TODO BREAK 分裂块 从irBuilder读取结束位置*/
-        break;
+        assert(false);
+    }
+    break;
     case STMT_CONT:
+    {
         /*TODO CONT 分裂块 从irBuilder读取测试位置*/
-        break;
+        assert(false);
+    }
+    break;
     default:
+        assert(false);
         break;
     }
 }
@@ -563,7 +605,7 @@ int ExpAST::forceCalc(SymbolTable *symTab)
         delete rightExp;
         break;
     default:
-        assert(true);
+        assert(false);
         break;
     }
 
@@ -634,7 +676,7 @@ int ExpAST::forceCalc(SymbolTable *symTab)
         break;
     default:
         valRes = 0;
-        assert(true);
+        assert(false);
         break;
     }
 
@@ -647,10 +689,174 @@ int ExpAST::forceCalc(SymbolTable *symTab)
 
 void ExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
-std::string ExpAST::buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab)
+std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    /*TODO TODO TODO TODO TODO TODO */
-    return std::string();
+    std::string left, right, res, stmt;
+
+    switch (opt)
+    {
+    case OpEnum::OP_PRI:
+        res = primaryExp->buildIRRetString(irBuilder, symTab);
+        break;
+    case OpEnum::OP_POS:
+        res = rightExp->buildIRRetString(irBuilder, symTab);
+        break;
+    case OpEnum::OP_NEG:
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = sub 0, ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_NOT_B:
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = xor -1, ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_NOT_L:
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = eq 0, ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_E:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = eq ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_NE:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = ne ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_L:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = lt ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_LE:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = le ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_G:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = gt ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_GE:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = ge ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_ADD:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = add ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_SUB:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = sub ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_MUL:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = mul ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_DIV:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = div ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_MOD:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = mod ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_AND_B:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = and ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_OR_B:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = or ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_XOR_B:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = xor ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_AND_L:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = ne 0, ") + left;
+        irBuilder->pushStmt(stmt);
+        left = res;
+
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = ne 0, ") + right;
+        irBuilder->pushStmt(stmt);
+        right = res;
+
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = and ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    case OpEnum::OP_OR_L:
+        left = leftExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = ne 0, ") + left;
+        irBuilder->pushStmt(stmt);
+        left = res;
+
+        right = rightExp->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = ne 0, ") + right;
+        irBuilder->pushStmt(stmt);
+        right = res;
+
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = or ") + left + std::string(", ") + right;
+        irBuilder->pushStmt(stmt);
+        break;
+    default:
+        assert(false);
+        break;
+    }
+
+    return res;
 }
 
 /* PrimaryExpAST */
@@ -721,10 +927,27 @@ int PrimaryExpAST::forceCalc(SymbolTable *symTab)
 
 void PrimaryExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
-std::string PrimaryExpAST::buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab)
+std::string PrimaryExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    /*TODO TODO TODO TODO TODO TODO */
-    return std::string();
+    std::string res, params, stmt;
+    switch (type)
+    {
+    case PrimEnum::PRI_CONST:
+        res = std::to_string(constVal);
+        break;
+    case PrimEnum::PRI_LVAL:
+        // res = lVal->buildIRRetString(irBuilder, symTab);
+        break;
+    case PrimEnum::PRI_CALL:
+        // params = paras->buildIRRetString(irBuilder, symTab);
+        // res = irBuilder->getNextIdent();
+        // stmt = res + std::string(" = call @") + funcName + params;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+    return res;
 }
 
 /* DataDeclAST */
@@ -968,6 +1191,12 @@ void FuncRParamsAST::setSymbolTable(SymbolTable *symTab) {}
 
 void FuncRParamsAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
+std::string FuncRParamsAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    /*TODO*/
+    return std::string("()");
+}
+
 /* DataLValIdentAST */
 
 DataLValIdentAST::DataLValIdentAST()
@@ -1029,6 +1258,13 @@ std::vector<int> DataLValIdentAST::getArrayDim(SymbolTable *symTab)
 
 void DataLValIdentAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
+std::string DataLValIdentAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    /*TODO*/
+    /*局部常量*/
+    return std::string("123");
+}
+
 /* DataInitvalAST */
 
 DataInitvalAST::DataInitvalAST()
@@ -1081,7 +1317,7 @@ void DataInitvalAST::setSymbolTable(SymbolTable *symTab) {}
 
 std::vector<int> DataInitvalAST::getInitVector(std::vector<int> arrayDim, SymbolTable *symTab)
 {
-    // TODO
+    /* TODO */
     int cum = 1;
     for (auto e : arrayDim)
         cum *= e;

@@ -165,7 +165,7 @@ class ExpAST : public BaseAST
     int forceCalc(SymbolTable *symTab);
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
-    std::string buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab);
+    std::string buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class PrimaryExpAST : public BaseAST
@@ -193,7 +193,7 @@ class PrimaryExpAST : public BaseAST
     int forceCalc(SymbolTable *symTab);
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
-    std::string buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab);
+    std::string buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class DataDeclAST : public BaseAST
@@ -270,6 +270,7 @@ class FuncRParamsAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
+    std::string buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class DataLValIdentAST : public BaseAST
@@ -292,6 +293,7 @@ class DataLValIdentAST : public BaseAST
     virtual void setSymbolTable(SymbolTable *symTab) override;
     std::vector<int> getArrayDim(SymbolTable *symTab = NULL);
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
+    std::string buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class DataInitvalAST : public BaseAST

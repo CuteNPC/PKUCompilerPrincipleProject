@@ -1,2 +1,2 @@
 current_directory=$(pwd)
-autotest -koopa -s lv1 $current_directory
+autotest -koopa -s lv4 $current_directory

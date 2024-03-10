@@ -11,9 +11,9 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv6/2_multiple_if_else.c",
+                "testcases/lv3/23_lor.c",
                 "-o",
-                "temp/res.txt"
+                "temp/koopa.txt"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
