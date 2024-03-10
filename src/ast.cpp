@@ -790,7 +790,9 @@ void ExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    std::string left, right, res, stmt;
+    std::string left, left2, right, right2, resPtr, res, stmt;
+    IRBlock *entryBlock, *thenBlock;
+    std::string thenName, endName;
 
     switch (opt)
     {
@@ -918,37 +920,65 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         break;
     case OpEnum::OP_AND_L:
         left = leftExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
-        stmt = res + std::string(" = ne 0, ") + left;
+        resPtr = irBuilder->getNextIdent();
+        stmt = resPtr + std::string(" = alloc i32");
         irBuilder->pushStmt(stmt);
-        left = res;
+        stmt = std::string("store 0, ") + resPtr;
+        irBuilder->pushStmt(stmt);
+        entryBlock = irBuilder->currentBlock;
 
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
-        stmt = res + std::string(" = ne 0, ") + right;
+        irBuilder->pushAndGetBlock();
+        thenName = irBuilder->currentBlock->blockName;
+
+        right2 = rightExp->buildIRRetString(irBuilder, symTab);
+        right = irBuilder->getNextIdent();
+        stmt = right + std::string(" = ne 0, ") + right2;
         irBuilder->pushStmt(stmt);
-        right = res;
+        stmt = std::string("store ") + right + std::string(", ") + resPtr;
+        irBuilder->pushStmt(stmt);
+        thenBlock = irBuilder->currentBlock;
+
+        irBuilder->pushAndGetBlock();
+        endName = irBuilder->currentBlock->blockName;
 
         res = irBuilder->getNextIdent();
-        stmt = res + std::string(" = and ") + left + std::string(", ") + right;
+        stmt = res + std::string(" = load ") + resPtr;
         irBuilder->pushStmt(stmt);
+
+        irBuilder->connectIf(left, entryBlock, thenName, thenBlock, endName);
         break;
     case OpEnum::OP_OR_L:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
-        stmt = res + std::string(" = ne 0, ") + left;
+        /*TODO 其他实现？*/
+        left2 = leftExp->buildIRRetString(irBuilder, symTab);
+        left = irBuilder->getNextIdent();
+        stmt = left + std::string(" = eq 0, ") + left2;
         irBuilder->pushStmt(stmt);
-        left = res;
+        resPtr = irBuilder->getNextIdent();
+        stmt = resPtr + std::string(" = alloc i32");
+        irBuilder->pushStmt(stmt);
+        stmt = std::string("store 1, ") + resPtr;
+        irBuilder->pushStmt(stmt);
+        entryBlock = irBuilder->currentBlock;
 
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
-        stmt = res + std::string(" = ne 0, ") + right;
+        irBuilder->pushAndGetBlock();
+        thenName = irBuilder->currentBlock->blockName;
+
+        right2 = rightExp->buildIRRetString(irBuilder, symTab);
+        right = irBuilder->getNextIdent();
+        stmt = right + std::string(" = ne 0, ") + right2;
         irBuilder->pushStmt(stmt);
-        right = res;
+        stmt = std::string("store ") + right + std::string(", ") + resPtr;
+        irBuilder->pushStmt(stmt);
+        thenBlock = irBuilder->currentBlock;
+
+        irBuilder->pushAndGetBlock();
+        endName = irBuilder->currentBlock->blockName;
 
         res = irBuilder->getNextIdent();
-        stmt = res + std::string(" = or ") + left + std::string(", ") + right;
+        stmt = res + std::string(" = load ") + resPtr;
         irBuilder->pushStmt(stmt);
+
+        irBuilder->connectIf(left, entryBlock, thenName, thenBlock, endName);
         break;
     default:
         assert(false);
