@@ -532,20 +532,54 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
     break;
     case STMT_WHILE:
     {
-        /*TODO WHILE 分裂块 记录当前while到irBuilder里*/
-        assert(false);
+        IRBlock *entryBlock = irBuilder->currentBlock;
+
+        irBuilder->pushAndGetBlock();
+        std::string testName = irBuilder->currentBlock->blockName;
+
+        std::string cond = lOrExp->buildIRRetString(irBuilder, symTab);
+        IRBlock *testBlock = irBuilder->currentBlock;
+
+        irBuilder->pushAndGetBlock();
+        std::string loopName = irBuilder->currentBlock->blockName;
+
+        IRBlock *endBlock = irBuilder->getNewBlock();
+        std::string endName = endBlock->blockName;
+
+        /*保存上层while的Name*/
+        std::string savedTestBlockName = irBuilder->whileTestBlockName;
+        std::string savedEndBlockName = irBuilder->whileEndBlockName;
+        irBuilder->whileTestBlockName = testName;
+        irBuilder->whileEndBlockName = endName;
+        /*保存上层while的Name*/
+
+        mainStmt->buildIR(irBuilder, symTab);
+
+        /*恢复上层while的Name*/
+        irBuilder->whileTestBlockName = savedTestBlockName;
+        irBuilder->whileEndBlockName = savedEndBlockName;
+        /*恢复上层while的Name*/
+
+        IRBlock *loopBlock = irBuilder->currentBlock;
+
+        irBuilder->connectWhile(cond, entryBlock, testName, testBlock, loopName, loopBlock,
+                                endName);
+        irBuilder->pushCurrentBlock();
+        irBuilder->setCurrentBlock(endBlock);
     }
     break;
     case STMT_BREAK:
     {
-        /*TODO BREAK 分裂块 从irBuilder读取结束位置*/
-        assert(false);
+        std::string stmt = std::string("jump ") + irBuilder->whileEndBlockName;
+        irBuilder->pushStmt(stmt);
+        irBuilder->pushAndGetBlock(true);
     }
     break;
     case STMT_CONT:
     {
-        /*TODO CONT 分裂块 从irBuilder读取测试位置*/
-        assert(false);
+        std::string stmt = std::string("jump ") + irBuilder->whileTestBlockName;
+        irBuilder->pushStmt(stmt);
+        irBuilder->pushAndGetBlock(true);
     }
     break;
     default:

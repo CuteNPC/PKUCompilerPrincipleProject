@@ -88,6 +88,9 @@ class IRBuilder
     void connectIfElse(std::string cond, IRBlock *entryBlock, std::string thenName,
                        IRBlock *thenBlock, std::string elseName, IRBlock *elseBlock,
                        std::string endName);
+    void connectWhile(std::string cond, IRBlock *entryBlock, std::string testName,
+                      IRBlock *testBlock, std::string loopName, IRBlock *loopBlock,
+                      std::string endName);
     void Dump(std::ostream &outStream) const;
     friend std::ostream &operator<<(std::ostream &outStream, const IRBuilder &block);
 };

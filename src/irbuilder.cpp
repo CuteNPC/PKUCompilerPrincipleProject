@@ -166,6 +166,21 @@ void IRBuilder::connectIfElse(std::string cond, IRBlock *entryBlock, std::string
     elseBlock->stmtVec.push_back(endJumpStmt);
 }
 
+void IRBuilder::connectWhile(std::string cond, IRBlock *entryBlock, std::string testName,
+                             IRBlock *testBlock, std::string mainName, IRBlock *mainBlock,
+                             std::string endName)
+{
+    std::string entryJumpStmt = std::string("jump ") + testName;
+    entryBlock->stmtVec.push_back(entryJumpStmt);
+
+    std::string testJumpStmt =
+        std::string("br ") + cond + std::string(", ") + mainName + std::string(", ") + endName;
+    testBlock->stmtVec.push_back(testJumpStmt);
+
+    std::string mainJumpStmt = std::string("jump ") + testName;
+    mainBlock->stmtVec.push_back(mainJumpStmt);
+}
+
 std::ostream &operator<<(std::ostream &outStream, const IRBuilder &build)
 {
     build.Dump(outStream);

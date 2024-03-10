@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv6/3_nested_if.c",
+                "testcases/lv7/00_while.c",
                 "-o",
                 "temp/koopa.txt"
             ],
