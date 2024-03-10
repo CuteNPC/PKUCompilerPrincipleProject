@@ -281,6 +281,7 @@ class DataLValIdentAST : public BaseAST
     std::string ident;
     bool emptyValStart;
     std::vector<ExpAST *> expVec;
+    SymbolEntry *relaSym; /* BAD */
     DataLValIdentAST();
     DataLValIdentAST(DefiEnum defi_, TypeEnum type_, std::string ident_,
                      bool emptyValStart = false);

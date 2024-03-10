@@ -157,10 +157,12 @@ SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum def
         int entryBlockVecIndexSize = sym->blockVecIndex.size();
         if (entryBlockVecIndexSize > blockVecIndex_.size())
             continue;
+        bool ok = true;
         for (int i = 0; i < entryBlockVecIndexSize; i++)
             if (sym->blockVecIndex[i] != blockVecIndex_[i])
-                continue;
-        return sym;
+                ok = false;
+        if (ok)
+            return sym;
     }
     return NULL;
 }
@@ -181,10 +183,12 @@ std::vector<SymbolEntry *> SymbolTable::match(std::string funcName_,
             continue;
         if (len != sym->blockVecIndex.size())
             continue;
+        bool push = true;
         for (int i = 0; i < len; i++)
             if (blockVecIndex_[i] != sym->blockVecIndex[i])
-                continue;
-        res.push_back(sym);
+                push = false;
+        if (push)
+            res.push_back(sym);
     }
     return res;
 }

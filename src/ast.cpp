@@ -183,21 +183,27 @@ void BlockAST::setSymbolTable(SymbolTable *symTab)
     symTab->enterBlock();
     vecIndex = symTab->currentBlockVecIndex;
     for (BlockItemAST *item : itemVec)
-        item->setSymbolTable(symTab);
-    for (BlockItemAST *item : itemVec)
     {
+        item->setSymbolTable(symTab);
         if (item->itemEnum == BlockItemEnum::BLOCK_DECL)
         {
             for (DataDefAST *def : item->decl->defVec)
+            {
                 if (def->stmtAfterSym != NULL)
                 {
+                    def->stmtAfterSym->setSymbolTable(symTab);
                     stmtVec.push_back(def->stmtAfterSym);
                     def->stmtAfterSym = NULL;
                 }
-            delete item;
+            }
         }
         if (item->itemEnum == BlockItemEnum::BLOCK_STMT)
+        {
+            item->stmt->setSymbolTable(symTab);
             stmtVec.push_back(item->stmt);
+            item->stmt = NULL;
+        }
+        delete item;
     }
     itemVec.clear();
     symTab->leaveBlock();
@@ -255,8 +261,8 @@ void BlockItemAST::setSymbolTable(SymbolTable *symTab)
 {
     if (itemEnum == BlockItemEnum::BLOCK_DECL)
         decl->setSymbolTable(symTab);
-    if (itemEnum == BlockItemEnum::BLOCK_STMT)
-        stmt->setSymbolTable(symTab);
+    // if (itemEnum == BlockItemEnum::BLOCK_STMT)
+    // stmt->setSymbolTable(symTab);
 }
 
 void BlockItemAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
@@ -392,12 +398,17 @@ void StmtAST::setSymbolTable(SymbolTable *symTab)
     case STMT_EMPTY:
         break;
     case STMT_ASSIGN:
+        lVal->setSymbolTable(symTab);
+        lOrExp->setSymbolTable(symTab);
         break;
     case STMT_ASSIGN_ARRAY:
+        lVal->setSymbolTable(symTab);
         break;
     case STMT_EXP:
+        lOrExp->setSymbolTable(symTab);
         break;
     case STMT_RET_INT:
+        lOrExp->setSymbolTable(symTab);
         break;
     case STMT_RET_VOID:
         break;
@@ -405,13 +416,16 @@ void StmtAST::setSymbolTable(SymbolTable *symTab)
         block->setSymbolTable(symTab);
         break;
     case STMT_IF:
+        lOrExp->setSymbolTable(symTab);
         mainStmt->setSymbolTable(symTab);
         break;
     case STMT_IF_ELSE:
+        lOrExp->setSymbolTable(symTab);
         mainStmt->setSymbolTable(symTab);
         elseStmt->setSymbolTable(symTab);
         break;
     case STMT_WHILE:
+        lOrExp->setSymbolTable(symTab);
         mainStmt->setSymbolTable(symTab);
         break;
     case STMT_BREAK:
@@ -477,14 +491,43 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
     break;
     case STMT_IF:
     {
-        /*TODO IF 分裂块*/
-        assert(false);
+        std::string cond = lOrExp->buildIRRetString(irBuilder, symTab);
+        IRBlock *entryBlock = irBuilder->currentBlock;
+
+        irBuilder->pushBlock();
+        std::string thenName = irBuilder->currentBlock->blockName;
+
+        mainStmt->buildIR(irBuilder, symTab);
+        IRBlock *thenBlock = irBuilder->currentBlock;
+
+        irBuilder->pushBlock();
+        std::string endName = irBuilder->currentBlock->blockName;
+
+        irBuilder->connectIf(cond, entryBlock, thenName, thenBlock, endName);
     }
     break;
     case STMT_IF_ELSE:
     {
-        /*TODO IF ELSE 分裂块*/
-        assert(false);
+        std::string cond = lOrExp->buildIRRetString(irBuilder, symTab);
+        IRBlock *entryBlock = irBuilder->currentBlock;
+
+        irBuilder->pushBlock();
+        std::string thenName = irBuilder->currentBlock->blockName;
+
+        mainStmt->buildIR(irBuilder, symTab);
+        IRBlock *thenBlock = irBuilder->currentBlock;
+
+        irBuilder->pushBlock();
+        std::string elseName = irBuilder->currentBlock->blockName;
+
+        elseStmt->buildIR(irBuilder, symTab);
+        IRBlock *elseBlock = irBuilder->currentBlock;
+
+        irBuilder->pushBlock();
+        std::string endName = irBuilder->currentBlock->blockName;
+
+        irBuilder->connectIfElse(cond, entryBlock, thenName, thenBlock, elseName, elseBlock,
+                                 endName);
     }
     break;
     case STMT_WHILE:
@@ -568,7 +611,23 @@ void ExpAST::DumpContent(std::ostream &outStream, int indent) const
     }
 }
 
-void ExpAST::setSymbolTable(SymbolTable *symTab) {}
+void ExpAST::setSymbolTable(SymbolTable *symTab)
+{
+    if (opt == OpEnum::OP_NONE)
+    {
+        assert(false);
+    }
+    else if (opt == OpEnum::OP_PRI)
+    {
+        primaryExp->setSymbolTable(symTab);
+    }
+    else
+    {
+        if (leftExp)
+            leftExp->setSymbolTable(symTab);
+        rightExp->setSymbolTable(symTab);
+    }
+}
 
 int ExpAST::forceCalc(SymbolTable *symTab)
 {
@@ -891,7 +950,9 @@ PrimaryExpAST::PrimaryExpAST(const char *funcName_, FuncRParamsAST *paras_)
 
 PrimaryExpAST::~PrimaryExpAST()
 {
-    if (paras)
+    if (type == PrimEnum::PRI_LVAL)
+        delete lVal;
+    if (type == PrimEnum::PRI_CALL)
         delete paras;
 }
 
@@ -912,7 +973,18 @@ void PrimaryExpAST::DumpContent(std::ostream &outStream, int indent) const
     }
 }
 
-void PrimaryExpAST::setSymbolTable(SymbolTable *symTab) {}
+void PrimaryExpAST::setSymbolTable(SymbolTable *symTab)
+{
+
+    if (type == PrimEnum::PRI_NONE)
+        assert(false);
+    if (type == PrimEnum::PRI_CONST)
+        ;
+    if (type == PrimEnum::PRI_LVAL)
+        lVal->setSymbolTable(symTab);
+    if (type == PrimEnum::PRI_CALL)
+        paras->setSymbolTable(symTab);
+}
 
 int PrimaryExpAST::forceCalc(SymbolTable *symTab)
 {
@@ -922,9 +994,9 @@ int PrimaryExpAST::forceCalc(SymbolTable *symTab)
     }
     if (type == PrimEnum::PRI_LVAL)
     {
-        SymbolEntry *sym = symTab->match(lVal->ident, lVal->type, lVal->defi);
-        assert(sym);
-        return sym->initval;
+        if (!lVal->relaSym)
+            lVal->setSymbolTable(symTab);
+        return lVal->relaSym->initval;
     }
     assert(true);
     return 0;
@@ -1200,7 +1272,11 @@ void FuncRParamsAST::DumpContent(std::ostream &outStream, int indent) const
 
 const char *FuncRParamsAST::getClassName() const { return "FuncRParamsAST"; }
 
-void FuncRParamsAST::setSymbolTable(SymbolTable *symTab) {}
+void FuncRParamsAST::setSymbolTable(SymbolTable *symTab)
+{
+    for (ExpAST *exp : expVec)
+        exp->setSymbolTable(symTab);
+}
 
 void FuncRParamsAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
@@ -1254,7 +1330,10 @@ void DataLValIdentAST::DumpContent(std::ostream &outStream, int indent) const
 
 const char *DataLValIdentAST::getClassName() const { return "DataLValIdentAST"; }
 
-void DataLValIdentAST::setSymbolTable(SymbolTable *symTab) {}
+void DataLValIdentAST::setSymbolTable(SymbolTable *symTab)
+{
+    relaSym = symTab->match(ident, type, defi);
+}
 
 std::vector<int> DataLValIdentAST::getArrayDim(SymbolTable *symTab)
 {
@@ -1273,20 +1352,19 @@ void DataLValIdentAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    SymbolEntry *sym = symTab->match(ident, type, defi);
-    if (!sym->isArray())
+    if (!relaSym->isArray())
     {
         /*局部变量，全局变量*/
-        if (sym->defi == DefiEnum::DEFI_VAR)
+        if (relaSym->defi == DefiEnum::DEFI_VAR)
         {
             std::string res = irBuilder->getNextIdent();
-            std::string stmt = res + std::string(" = load ") + sym->getIRVarName();
+            std::string stmt = res + std::string(" = load ") + relaSym->getIRVarName();
             irBuilder->pushStmt(stmt);
             return res;
         }
         /*局部常量，全局常量*/
-        else if (sym->defi == DefiEnum::DEFI_CONST)
-            return std::to_string(sym->initval);
+        else if (relaSym->defi == DefiEnum::DEFI_CONST)
+            return std::to_string(relaSym->initval);
         else
             assert(false);
     }
@@ -1300,15 +1378,14 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
 
 std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    SymbolEntry *sym = symTab->match(ident, type, defi);
-    if (!sym->isArray())
+    if (!relaSym->isArray())
     {
         /*局部变量，全局变量*/
-        if (sym->defi == DefiEnum::DEFI_VAR)
-            return sym->getIRVarName();
+        if (relaSym->defi == DefiEnum::DEFI_VAR)
+            return relaSym->getIRVarName();
         /*局部常量，全局常量*/
-        else if (sym->defi == DefiEnum::DEFI_CONST)
-            return std::to_string(sym->initval);
+        else if (relaSym->defi == DefiEnum::DEFI_CONST)
+            return std::to_string(relaSym->initval);
         else
             assert(false);
     }

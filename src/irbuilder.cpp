@@ -44,7 +44,8 @@ void IRFunction::Dump(std::ostream &outStream) const
     outStream << "fun @" << funcName << '(' << inputType << ')' << outputType << " {" << std::endl;
     outStream << std::endl;
     for (IRBlock *block : blockVec)
-        outStream << *block << std::endl;
+        if ((!block->deadBlock) && (block->stmtVec.size() != 0))
+            outStream << *block << std::endl;
     outStream << '}' << std::endl;
 }
 
@@ -89,7 +90,7 @@ void IRBuilder::startFunc(std::string funcName_, std::string inputType_, std::st
 
 void IRBuilder::pushBlock(bool nextIsDeadBlock)
 {
-    static const bool pushDeadBlock = false;
+    static const bool pushDeadBlock = true;
     if ((!currentBlock->deadBlock) || pushDeadBlock)
         blockVec.push_back(currentBlock);
     else
@@ -122,6 +123,30 @@ std::string IRBuilder::getNextIdent()
     res += std::to_string(currentTempCounter);
     currentTempCounter++;
     return res;
+}
+
+void IRBuilder::connectIf(std::string cond, IRBlock *entryBlock, std::string thenName,
+                          IRBlock *thenBlock, std::string endName)
+{
+    std::string condJumpStmt =
+        std::string("br ") + cond + std::string(", ") + thenName + std::string(", ") + endName;
+    entryBlock->stmtVec.push_back(condJumpStmt);
+
+    std::string endJumpStmt = std::string("jump ") + endName;
+    thenBlock->stmtVec.push_back(endJumpStmt);
+}
+
+void IRBuilder::connectIfElse(std::string cond, IRBlock *entryBlock, std::string thenName,
+                              IRBlock *thenBlock, std::string elseName, IRBlock *elseBlock,
+                              std::string endName)
+{
+    std::string condJumpStmt =
+        std::string("br ") + cond + std::string(", ") + thenName + std::string(", ") + elseName;
+    entryBlock->stmtVec.push_back(condJumpStmt);
+
+    std::string endJumpStmt = std::string("jump ") + endName;
+    thenBlock->stmtVec.push_back(endJumpStmt);
+    elseBlock->stmtVec.push_back(endJumpStmt);
 }
 
 std::ostream &operator<<(std::ostream &outStream, const IRBuilder &build)

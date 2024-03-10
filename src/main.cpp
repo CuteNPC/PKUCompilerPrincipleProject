@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 
-#define MYDEBUGx
+#define MYDEBUG
 
 #ifdef MYDEBUG
 
