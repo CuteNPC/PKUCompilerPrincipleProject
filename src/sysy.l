@@ -10,8 +10,6 @@
 #include "keyword.hpp"
 #include "sysy.tab.hpp"
 
-using namespace std;
-
 %}
 
 WhiteSpace    [ \t\n\r]*
@@ -66,7 +64,7 @@ Hexadecimal   0[xX][0-9a-fA-F]+
 "void"          { yylval.type_val = TypeEnum::TYPE_VOID             ; return Y_TYPE_VOID     ; }
 "const"         { yylval.type_val = TypeEnum::TYPE_CONST            ; return Y_TYPE_CONST    ; }
 
-{Identifier}    { yylval.ident_val = new string(yytext)             ; return Y_IDENT         ; }
+{Identifier}    { yylval.ident_val = new std::string(yytext)             ; return Y_IDENT         ; }
 
 {Decimal}       { yylval.const_int_val = strtol(yytext, nullptr, 0) ; return Y_CONST_INT     ; }
 {Octal}         { yylval.const_int_val = strtol(yytext, nullptr, 0) ; return Y_CONST_INT     ; }

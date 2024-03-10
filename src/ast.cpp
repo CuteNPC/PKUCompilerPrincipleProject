@@ -5,8 +5,6 @@
 #include <assert.h>
 #include <iomanip>
 
-using namespace std;
-
 /* Indent */
 
 class Indent
@@ -652,7 +650,7 @@ void ExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 std::string ExpAST::buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab)
 {
     /*TODO TODO TODO TODO TODO TODO */
-    return;
+    return std::string();
 }
 
 /* PrimaryExpAST */
@@ -726,7 +724,7 @@ void PrimaryExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 std::string PrimaryExpAST::buildIRforExp(IRBuilder *irBuilder, SymbolTable *symTab)
 {
     /*TODO TODO TODO TODO TODO TODO */
-    return;
+    return std::string();
 }
 
 /* DataDeclAST */
@@ -816,14 +814,14 @@ void DataDefAST::setSymbolTable(SymbolTable *symTab)
     /*局部变量：放入符号表中，符号表没有初值，设置stmtAfterSym*/
     /*局部数组：放入符号表中，符号表没有初值，设置stmtAfterSym*/
 
-    vector<int> arrayDimVec_ = defIdent->getArrayDim(symTab);
+    std::vector<int> arrayDimVec_ = defIdent->getArrayDim(symTab);
     std::string ident_ = defIdent->ident;
     int arrayDimCum = 1;
     for (int e : arrayDimVec_)
         arrayDimCum *= e;
 
     int initval_ = 0;
-    vector<int> initvalArray_;
+    std::vector<int> initvalArray_;
     if (symTab->currentBlockVecIndex.size() == 0)
     {
         if (arrayDimVec_.size() == 0)
@@ -838,7 +836,7 @@ void DataDefAST::setSymbolTable(SymbolTable *symTab)
             if (initval != NULL)
                 initvalArray_ = initval->getInitVector(arrayDimVec_);
             else
-                initvalArray_ = vector<int>(arrayDimCum);
+                initvalArray_ = std::vector<int>(arrayDimCum);
         }
     }
     else if (initval != NULL)
@@ -856,7 +854,7 @@ void DataDefAST::setSymbolTable(SymbolTable *symTab)
             for (ExpAST *&exp_ : defIdent->expVec)
                 delete exp_;
             defIdent->expVec.clear();
-            vector<int> initvalArray__ = initval->getInitVector(arrayDimVec_);
+            std::vector<int> initvalArray__ = initval->getInitVector(arrayDimVec_);
             stmtAfterSym = new StmtAST(defIdent, initvalArray__);
             defIdent = NULL;
         }
@@ -927,9 +925,10 @@ const char *FuncFParamAST::getClassName() const { return "FuncFParamAST"; }
 
 void FuncFParamAST::setSymbolTable(SymbolTable *symTab)
 {
-    SymbolEntry *sym = new SymbolEntry(symTab, para->type, para->defi, symTab->currentFuncName,
-                                       symTab->currentBlockVecIndex, symTab->currentBlockLineIndex,
-                                       para->ident, para->getArrayDim(), 0, vector<int>(), true);
+    SymbolEntry *sym =
+        new SymbolEntry(symTab, para->type, para->defi, symTab->currentFuncName,
+                        symTab->currentBlockVecIndex, symTab->currentBlockLineIndex, para->ident,
+                        para->getArrayDim(), 0, std::vector<int>(), true);
     symTab->append(sym);
 }
 
@@ -1015,9 +1014,9 @@ const char *DataLValIdentAST::getClassName() const { return "DataLValIdentAST"; 
 
 void DataLValIdentAST::setSymbolTable(SymbolTable *symTab) {}
 
-vector<int> DataLValIdentAST::getArrayDim(SymbolTable *symTab)
+std::vector<int> DataLValIdentAST::getArrayDim(SymbolTable *symTab)
 {
-    vector<int> arrayDimVec;
+    std::vector<int> arrayDimVec;
     if (emptyValStart)
         arrayDimVec.push_back(-1);
     for (ExpAST *&exp_ : expVec)
@@ -1080,7 +1079,7 @@ const char *DataInitvalAST::getClassName() const { return "DataInitvalAST"; }
 
 void DataInitvalAST::setSymbolTable(SymbolTable *symTab) {}
 
-vector<int> DataInitvalAST::getInitVector(std::vector<int> arrayDim, SymbolTable *symTab)
+std::vector<int> DataInitvalAST::getInitVector(std::vector<int> arrayDim, SymbolTable *symTab)
 {
     // TODO
     int cum = 1;

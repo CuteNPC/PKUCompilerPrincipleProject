@@ -10,9 +10,9 @@ SymbolEntry::SymbolEntry()
 }
 
 SymbolEntry::SymbolEntry(SymbolTable *symTab_, TypeEnum type_, DefiEnum defi_,
-                         std::string funcName_, vector<int> blockVecIndex_, int blockLineIndex_,
-                         std::string ident_, std::vector<int> arrayDimVec_, int initval_,
-                         std::vector<int> initvalArray_, bool funcPara_)
+                         std::string funcName_, std::vector<int> blockVecIndex_,
+                         int blockLineIndex_, std::string ident_, std::vector<int> arrayDimVec_,
+                         int initval_, std::vector<int> initvalArray_, bool funcPara_)
     : symTab(symTab_), type(type_), defi(defi_), ident(ident_), funcName(funcName_),
       blockVecIndex(blockVecIndex_), blockLineIndex(blockLineIndex_), arrayDimVec(arrayDimVec_),
       initval(initval_), initvalArray(initvalArray_), funcPara(funcPara_)
@@ -110,10 +110,10 @@ void SymbolTable::antiLeaveBlock()
     currentBlockVecIndex.pop_back();
 }
 
-vector<SymbolEntry *> &SymbolTable::Vec() { return symVec; }
+std::vector<SymbolEntry *> &SymbolTable::Vec() { return symVec; }
 
-SymbolEntry *SymbolTable::match(string ident_, TypeEnum type_, DefiEnum defi_, string funcName_,
-                                const vector<int> &blockVecIndex_) const
+SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum defi_,
+                                std::string funcName_, const std::vector<int> &blockVecIndex_) const
 {
     for (auto iter = symVec.rbegin(); iter != symVec.rend(); iter++)
     {

@@ -18,8 +18,6 @@ int yylex();
 void yyerror(CompUnitAST* ast, const char *s);
 std::string mvStr(std::string* str);
 
-using namespace std;
-
 %}
 
 %parse-param { CompUnitAST* &ast }
@@ -235,12 +233,12 @@ VarInitvalRaw:
 %%
 
 void yyerror(CompUnitAST* ast, const char *s) {
-  cerr << "Call yyerror "<< s << endl;
+  std::cerr << "Call yyerror "<< s << std::endl;
 }
 
 std::string mvStr(std::string* str)
 {
-  string tmp(*str);
+  std::string tmp(*str);
   delete str;
   return tmp;
 }

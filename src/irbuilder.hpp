@@ -9,8 +9,6 @@
 #include <iostream>
 #include <sstream>
 
-using namespace std;
-
 class IRStmt;
 class IRBlock;
 class IRFunction;
@@ -25,14 +23,14 @@ class IRStmt
 class IRBlock
 {
   public:
-    vector<IRStmt *> irStmtVec;
+    std::vector<IRStmt *> irStmtVec;
 };
 
 class IRFunction
 {
   public:
-    string funcName;
-    vector<IRBlock *> blockVec;
+    std::string funcName;
+    std::vector<IRBlock *> blockVec;
 };
 
 class IRGloData
@@ -48,11 +46,11 @@ class IRBuilder
 
     IRBlock *currentBlock;
 
-    string funcName;
-    vector<IRBlock *> blockVec;
+    std::string funcName;
+    std::vector<IRBlock *> blockVec;
 
-    vector<IRGloData *> dataVec;
-    vector<IRFunction *> funcVec;
+    std::vector<IRGloData *> dataVec;
+    std::vector<IRFunction *> funcVec;
 
     IRBuilder();
     void buildFrom(CompUnitAST *ast, SymbolTable *symTab);

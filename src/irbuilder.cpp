@@ -1,7 +1,5 @@
 #include "irbuilder.hpp"
 
-using namespace std;
-
 const static char emptyMainKoopaIRString[] = "fun @%s(): i32 {\n%%entry:\n  ret %d\n}\n";
 
 /* IRBuilder */
@@ -18,7 +16,7 @@ void IRBuilder::buildFrom(CompUnitAST *ast, SymbolTable *symTab)
     symTab->resetCursor();
 }
 
-string IRBuilder::DumpToString() { return string(emptyMainKoopaIRString); }
+std::string IRBuilder::DumpToString() { return std::string(emptyMainKoopaIRString); }
 
 void IRBuilder::startFunc()
 {

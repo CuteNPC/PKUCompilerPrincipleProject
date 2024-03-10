@@ -21,11 +21,11 @@ int main(int argc, const char *argv[])
 
     symTab->buildFrom(ast);
 
-    ofstream symInfoFile("temp/sym.txt");
+    std::ofstream symInfoFile("temp/sym.txt");
 
     symInfoFile << *symTab << std::endl;
 
-    ofstream astInfoFile("temp/res2.txt");
+    std::ofstream astInfoFile("temp/res2.txt");
 
     astInfoFile << *ast << std::endl;
 
