@@ -67,15 +67,21 @@ class IRBuilder
     std::string outputType;
     std::vector<IRBlock *> blockVec;
 
+    std::string whileTestBlockName;
+    std::string whileEndBlockName;
+
     std::vector<IRGloData *> dataVec;
     std::vector<IRFunction *> funcVec;
 
     IRBuilder();
     void buildFrom(CompUnitAST *ast, SymbolTable *symTab);
     void startFunc(std::string funcName_, std::string inputType_, std::string outputType_);
-    void pushBlock(bool nextIsDeadBlock = false);
-    void pushStmt(std::string stmt);
     void endFunc();
+    IRBlock *getNewBlock(bool nextIsDeadBlock = false);
+    void setCurrentBlock(IRBlock *block);
+    void pushCurrentBlock();
+    void pushAndGetBlock(bool nextIsDeadBlock = false);
+    void pushStmt(std::string stmt);
     std::string getNextIdent();
     void connectIf(std::string cond, IRBlock *entryBlock, std::string thenName, IRBlock *thenBlock,
                    std::string endName);

@@ -474,14 +474,14 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
         std::string retValue = lOrExp->buildIRRetString(irBuilder, symTab);
         std::string stmt = std::string("ret ") + retValue;
         irBuilder->pushStmt(stmt);
-        irBuilder->pushBlock(true);
+        irBuilder->pushAndGetBlock(true);
     }
     break;
     case STMT_RET_VOID:
     {
         std::string stmt = std::string("ret");
         irBuilder->pushStmt(stmt);
-        irBuilder->pushBlock(true);
+        irBuilder->pushAndGetBlock(true);
     }
     break;
     case STMT_BLOCK:
@@ -494,13 +494,13 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
         std::string cond = lOrExp->buildIRRetString(irBuilder, symTab);
         IRBlock *entryBlock = irBuilder->currentBlock;
 
-        irBuilder->pushBlock();
+        irBuilder->pushAndGetBlock();
         std::string thenName = irBuilder->currentBlock->blockName;
 
         mainStmt->buildIR(irBuilder, symTab);
         IRBlock *thenBlock = irBuilder->currentBlock;
 
-        irBuilder->pushBlock();
+        irBuilder->pushAndGetBlock();
         std::string endName = irBuilder->currentBlock->blockName;
 
         irBuilder->connectIf(cond, entryBlock, thenName, thenBlock, endName);
@@ -511,19 +511,19 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
         std::string cond = lOrExp->buildIRRetString(irBuilder, symTab);
         IRBlock *entryBlock = irBuilder->currentBlock;
 
-        irBuilder->pushBlock();
+        irBuilder->pushAndGetBlock();
         std::string thenName = irBuilder->currentBlock->blockName;
 
         mainStmt->buildIR(irBuilder, symTab);
         IRBlock *thenBlock = irBuilder->currentBlock;
 
-        irBuilder->pushBlock();
+        irBuilder->pushAndGetBlock();
         std::string elseName = irBuilder->currentBlock->blockName;
 
         elseStmt->buildIR(irBuilder, symTab);
         IRBlock *elseBlock = irBuilder->currentBlock;
 
-        irBuilder->pushBlock();
+        irBuilder->pushAndGetBlock();
         std::string endName = irBuilder->currentBlock->blockName;
 
         irBuilder->connectIfElse(cond, entryBlock, thenName, thenBlock, elseName, elseBlock,

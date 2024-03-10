@@ -88,23 +88,40 @@ void IRBuilder::startFunc(std::string funcName_, std::string inputType_, std::st
     currentBlock = new IRBlock(getNextIdent());
 }
 
-void IRBuilder::pushBlock(bool nextIsDeadBlock)
+IRBlock *IRBuilder::getNewBlock(bool nextIsDeadBlock)
+{
+    return new IRBlock(getNextIdent(), nextIsDeadBlock);
+}
+
+void IRBuilder::setCurrentBlock(IRBlock *block)
+{
+    if (currentBlock)
+        delete currentBlock;
+    currentBlock = block;
+}
+
+void IRBuilder::pushCurrentBlock()
 {
     static const bool pushDeadBlock = true;
     if ((!currentBlock->deadBlock) || pushDeadBlock)
         blockVec.push_back(currentBlock);
     else
         delete currentBlock;
+    currentBlock = NULL;
+}
 
-    currentBlock = new IRBlock(getNextIdent(), nextIsDeadBlock);
+void IRBuilder::pushAndGetBlock(bool nextIsDeadBlock)
+{
+    pushCurrentBlock();
+    IRBlock *block = getNewBlock(nextIsDeadBlock);
+    setCurrentBlock(block);
 }
 
 void IRBuilder::pushStmt(std::string stmt) { currentBlock->stmtVec.push_back(stmt); }
 
 void IRBuilder::endFunc()
 {
-    pushBlock();
-    delete currentBlock;
+    pushCurrentBlock();
     IRFunction *irFunction = new IRFunction(funcName, inputType, outputType, blockVec);
     funcVec.push_back(irFunction);
 
