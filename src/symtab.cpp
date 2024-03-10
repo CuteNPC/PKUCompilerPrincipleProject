@@ -62,6 +62,29 @@ void SymbolEntry::Dump(std::ostream &outStream) const
     outStream << ']' << std::endl;
 }
 
+std::string SymbolEntry::getIRVarName() const
+{
+    auto replaceFunc = [](std::string originalString, std::string searchString,
+                          std::string replaceString) -> std::string
+    {
+        size_t pos = 0;
+        while ((pos = originalString.find(searchString, pos)) != std::string::npos)
+        {
+            originalString.replace(pos, searchString.length(), replaceString);
+            pos += replaceString.length();
+        }
+        return originalString;
+    };
+
+    std::string newVarName("@");
+    newVarName += replaceFunc(ident, std::string("_"), std::string("__"));
+    for (int number : blockVecIndex)
+        newVarName += std::string("_") + std::to_string(number);
+    if (funcPara)
+        newVarName += std::string("_") + std::string("isparam");
+    return newVarName;
+}
+
 std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &entry)
 {
     entry.Dump(outStream);
@@ -112,6 +135,11 @@ void SymbolTable::antiLeaveBlock()
 
 std::vector<SymbolEntry *> &SymbolTable::Vec() { return symVec; }
 
+SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum defi_) const
+{
+    return match(ident_, type_, defi_, currentFuncName, currentBlockVecIndex);
+}
+
 SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum defi_,
                                 std::string funcName_, const std::vector<int> &blockVecIndex_) const
 {
@@ -120,7 +148,7 @@ SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum def
         SymbolEntry *sym = *iter;
         if (sym->type != type_)
             continue;
-        // if (sym->defi != TypeEnum::TYPE_CONST)
+        // if (sym->defi != defi_)
         // continue;
         if (sym->ident != ident_)
             continue;
@@ -135,6 +163,30 @@ SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum def
         return sym;
     }
     return NULL;
+}
+
+std::vector<SymbolEntry *> SymbolTable::match() const
+{
+    return match(currentFuncName, currentBlockVecIndex);
+}
+
+std::vector<SymbolEntry *> SymbolTable::match(std::string funcName_,
+                                              const std::vector<int> &blockVecIndex_) const
+{
+    std::vector<SymbolEntry *> res;
+    int len = blockVecIndex_.size();
+    for (SymbolEntry *sym : symVec)
+    {
+        if (sym->funcName != funcName_)
+            continue;
+        if (len != sym->blockVecIndex.size())
+            continue;
+        for (int i = 0; i < len; i++)
+            if (blockVecIndex_[i] != sym->blockVecIndex[i])
+                continue;
+        res.push_back(sym);
+    }
+    return res;
 }
 
 void SymbolTable::buildFrom(CompUnitAST *ast)

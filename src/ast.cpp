@@ -206,8 +206,18 @@ void BlockAST::setSymbolTable(SymbolTable *symTab)
 void BlockAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
     symTab->enterBlock();
-    /*TODO 查找声明，确定是否分配空间*/
-    /*还是得保留decl形式？不然鬼知道什么时候分配？*/
+    std::vector<SymbolEntry *> symEntryVec = symTab->match();
+
+    for (SymbolEntry *sym : symEntryVec)
+    {
+        if ((!sym->isArray()) && sym->defi == DefiEnum::DEFI_VAR)
+        {
+            std::string stmt = sym->getIRVarName() + std::string(" = alloc i32");
+            irBuilder->pushStmt(stmt);
+        }
+        /* TODO 分配 变量数组 是在这里分配，还是在函数开头分配？*/
+    }
+
     for (StmtAST *stmt : stmtVec)
         stmt->buildIR(irBuilder, symTab);
     symTab->leaveBlock();
@@ -428,10 +438,10 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
     break;
     case STMT_ASSIGN:
     {
-        std::string assignIRIdent = lOrExp->buildIRRetString(irBuilder, symTab);
-        /*TODO 如果是变量，一条store*/
-        /*TODO 如果是数组，一系列getelemptr，一条store*/
-        assert(false);
+        std::string rValStr = lOrExp->buildIRRetString(irBuilder, symTab);
+        std::string lValStr = lVal->buildIRRetAddr(irBuilder, symTab);
+        std::string stmt = std::string("store ") + rValStr + std::string(", ") + lValStr;
+        irBuilder->pushStmt(stmt);
     }
     break;
     case STMT_ASSIGN_ARRAY:
@@ -443,8 +453,6 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
     case STMT_EXP:
     {
         lOrExp->buildIRRetString(irBuilder, symTab);
-        /*TODO？*/
-        assert(false);
     }
     break;
     case STMT_RET_INT:
@@ -465,8 +473,6 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
     case STMT_BLOCK:
     {
         block->buildIR(irBuilder, symTab);
-        /*TODO*/
-        assert(false);
     }
     break;
     case STMT_IF:
@@ -916,8 +922,7 @@ int PrimaryExpAST::forceCalc(SymbolTable *symTab)
     }
     if (type == PrimEnum::PRI_LVAL)
     {
-        SymbolEntry *sym = symTab->match(lVal->ident, lVal->type, lVal->defi,
-                                         symTab->currentFuncName, symTab->currentBlockVecIndex);
+        SymbolEntry *sym = symTab->match(lVal->ident, lVal->type, lVal->defi);
         assert(sym);
         return sym->initval;
     }
@@ -936,12 +941,14 @@ std::string PrimaryExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *s
         res = std::to_string(constVal);
         break;
     case PrimEnum::PRI_LVAL:
-        // res = lVal->buildIRRetString(irBuilder, symTab);
+        res = lVal->buildIRRetValue(irBuilder, symTab);
         break;
     case PrimEnum::PRI_CALL:
-        // params = paras->buildIRRetString(irBuilder, symTab);
-        // res = irBuilder->getNextIdent();
-        // stmt = res + std::string(" = call @") + funcName + params;
+        assert(false);
+        params = paras->buildIRRetString(irBuilder, symTab);
+        res = irBuilder->getNextIdent();
+        stmt = res + std::string(" = call @") + funcName + params;
+        irBuilder->pushStmt(stmt);
         break;
     default:
         assert(false);
@@ -1033,9 +1040,13 @@ void DataDefAST::DumpContent(std::ostream &outStream, int indent) const
 void DataDefAST::setSymbolTable(SymbolTable *symTab)
 {
     /*全局变量：放入符号表中，符号表有初值，不设置stmtAfterSym*/
+    /*全局常量：放入符号表中，符号表有初值，不设置stmtAfterSym*/
     /*全局数组：放入符号表中，符号表有初值，不设置stmtAfterSym*/
+    /*全局常组：放入符号表中，符号表有初值，不设置stmtAfterSym*/
     /*局部变量：放入符号表中，符号表没有初值，设置stmtAfterSym*/
+    /*局部常量：放入符号表中，符号表有初值，不设置stmtAfterSym*/
     /*局部数组：放入符号表中，符号表没有初值，设置stmtAfterSym*/
+    /*局部常组：放入符号表中，符号表有初值，不设置stmtAfterSym*/
 
     std::vector<int> arrayDimVec_ = defIdent->getArrayDim(symTab);
     std::string ident_ = defIdent->ident;
@@ -1045,43 +1056,45 @@ void DataDefAST::setSymbolTable(SymbolTable *symTab)
 
     int initval_ = 0;
     std::vector<int> initvalArray_;
-    if (symTab->currentBlockVecIndex.size() == 0)
+    bool initInSymTab =
+        ((symTab->currentBlockVecIndex.size() == 0) || (defi == DefiEnum::DEFI_CONST));
+    bool setStmtAfterSym = (initval != NULL && !initInSymTab);
+
+    if (arrayDimVec_.size() == 0 && initInSymTab)
     {
-        if (arrayDimVec_.size() == 0)
-        {
-            /*全局变量*/
-            if (initval != NULL)
-                initval_ = initval->exp->forceCalc(symTab);
-        }
-        else
-        {
-            /*全局数组*/
-            if (initval != NULL)
-                initvalArray_ = initval->getInitVector(arrayDimVec_);
-            else
-                initvalArray_ = std::vector<int>(arrayDimCum);
-        }
+        /*全局变量，全局常量，局部常量*/
+        if (initval != NULL)
+            initval_ = initval->exp->forceCalc(symTab);
     }
-    else if (initval != NULL)
+
+    if (arrayDimVec_.size() != 0 && initInSymTab)
     {
-        if (arrayDimVec_.size() == 0)
-        {
-            /*局部变量*/
-            stmtAfterSym = new StmtAST(defIdent, initval->exp);
-            initval->exp = NULL;
-            defIdent = NULL;
-        }
+        /*全局数组，全局常组，局部常组*/
+        if (initval != NULL)
+            initvalArray_ = initval->getInitVector(arrayDimVec_);
         else
-        {
-            /*局部数组*/
-            for (ExpAST *&exp_ : defIdent->expVec)
-                delete exp_;
-            defIdent->expVec.clear();
-            std::vector<int> initvalArray__ = initval->getInitVector(arrayDimVec_);
-            stmtAfterSym = new StmtAST(defIdent, initvalArray__);
-            defIdent = NULL;
-        }
+            initvalArray_ = std::vector<int>(arrayDimCum);
     }
+
+    if (arrayDimVec_.size() == 0 && setStmtAfterSym)
+    {
+        /*局部变量*/
+        stmtAfterSym = new StmtAST(defIdent, initval->exp);
+        initval->exp = NULL;
+        defIdent = NULL;
+    }
+
+    if (arrayDimVec_.size() != 0 && setStmtAfterSym)
+    {
+        /*局部数组*/
+        for (ExpAST *&exp_ : defIdent->expVec)
+            delete exp_;
+        defIdent->expVec.clear();
+        std::vector<int> initvalArray__ = initval->getInitVector(arrayDimVec_);
+        stmtAfterSym = new StmtAST(defIdent, initvalArray__);
+        defIdent = NULL;
+    }
+
     SymbolEntry *sym = new SymbolEntry(symTab, type, defi, symTab->currentFuncName,
                                        symTab->currentBlockVecIndex, symTab->currentBlockLineIndex,
                                        ident_, arrayDimVec_, initval_, initvalArray_, false);
@@ -1258,11 +1271,53 @@ std::vector<int> DataLValIdentAST::getArrayDim(SymbolTable *symTab)
 
 void DataLValIdentAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
-std::string DataLValIdentAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
+std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    /*TODO*/
-    /*局部常量*/
-    return std::string("123");
+    SymbolEntry *sym = symTab->match(ident, type, defi);
+    if (!sym->isArray())
+    {
+        /*局部变量，全局变量*/
+        if (sym->defi == DefiEnum::DEFI_VAR)
+        {
+            std::string res = irBuilder->getNextIdent();
+            std::string stmt = res + std::string(" = load ") + sym->getIRVarName();
+            irBuilder->pushStmt(stmt);
+            return res;
+        }
+        /*局部常量，全局常量*/
+        else if (sym->defi == DefiEnum::DEFI_CONST)
+            return std::to_string(sym->initval);
+        else
+            assert(false);
+    }
+    else
+    {
+        /*TODO*/
+        assert(false);
+        /*数组*/
+    }
+}
+
+std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    SymbolEntry *sym = symTab->match(ident, type, defi);
+    if (!sym->isArray())
+    {
+        /*局部变量，全局变量*/
+        if (sym->defi == DefiEnum::DEFI_VAR)
+            return sym->getIRVarName();
+        /*局部常量，全局常量*/
+        else if (sym->defi == DefiEnum::DEFI_CONST)
+            return std::to_string(sym->initval);
+        else
+            assert(false);
+    }
+    else
+    {
+        /*TODO*/
+        assert(false);
+        /*数组*/
+    }
 }
 
 /* DataInitvalAST */

@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv3/23_lor.c",
+                "testcases/lv5/5_scope.c",
                 "-o",
                 "temp/koopa.txt"
             ],

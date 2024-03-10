@@ -293,7 +293,8 @@ class DataLValIdentAST : public BaseAST
     virtual void setSymbolTable(SymbolTable *symTab) override;
     std::vector<int> getArrayDim(SymbolTable *symTab = NULL);
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
-    std::string buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab);
+    std::string buildIRRetValue(IRBuilder *irBuilder, SymbolTable *symTab);
+    std::string buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class DataInitvalAST : public BaseAST
