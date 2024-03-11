@@ -14,6 +14,7 @@ class SymbolTable;
 class DataLValIdentAST;
 class DataInitvalAST;
 class CompUnitAST;
+class FuncDefAST;
 
 class SymbolEntry
 {
@@ -41,7 +42,7 @@ class SymbolEntry
     bool isFuncPara() const;
     bool isEmptyStartArray() const;
     void Dump(std::ostream &outStream = std::cout) const;
-    std::string getIRVarName() const;
+    std::string getIRVarName(bool isParamEnd = false) const;
     friend std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &ast);
 };
 
@@ -53,6 +54,7 @@ class SymbolTable
     int currentBlockVecIndexTail;
     int currentBlockLineIndex; /* no used */
     std::vector<SymbolEntry *> symVec;
+    std::unordered_map<std::string, bool> funcTypeIsVoid;
 
     SymbolTable();
     ~SymbolTable();
@@ -69,6 +71,7 @@ class SymbolTable
     std::vector<SymbolEntry *> &Vec();
     void buildFrom(CompUnitAST *ast);
     void resetCursor();
+    bool funcRetVoid(std::string funcName);
     void Dump(std::ostream &outStream = std::cout) const;
     friend std::ostream &operator<<(std::ostream &outStream, const SymbolTable &ast);
 };

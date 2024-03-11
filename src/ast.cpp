@@ -86,6 +86,9 @@ void CompUnitAST::setSymbolTable(SymbolTable *symTab)
     for (DataDeclAST *decl : declVec)
         delete decl;
     declVec.clear();
+    for (FuncDefAST *func : funcVec)
+        symTab->funcTypeIsVoid.insert(
+            std::make_pair(func->funcName, func->funcType == TypeEnum::TYPE_VOID));
 
     for (FuncDefAST *func : funcVec)
         func->setSymbolTable(symTab);
@@ -94,6 +97,27 @@ void CompUnitAST::setSymbolTable(SymbolTable *symTab)
 void CompUnitAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
     /* TODO 构建 全局声明*/
+    std::vector<SymbolEntry *> symEntryVec = symTab->match();
+
+    for (SymbolEntry *sym : symEntryVec)
+    {
+        if (sym->defi == DefiEnum::DEFI_VAR && !sym->isArray())
+        {
+            std::string newName = sym->getIRVarName();
+            std::string stmt = std::string("global ") + newName + std::string(" = alloc i32, ") +
+                               std::to_string(sym->initval);
+            irBuilder->dataVec.push_back(stmt);
+        }
+        if (sym->isArray())
+        {
+            std::string newName = sym->getIRVarName();
+            std::string stmt =
+                std::string("global ") + newName + " = alloc " +
+                irBuilder->getIRType(sym->arrayDimVec) + ", " +
+                irBuilder->aggregate1DtoNDString(sym->initvalArray, sym->arrayDimVec);
+            irBuilder->dataVec.push_back(stmt);
+        }
+    }
     for (FuncDefAST *func : funcVec)
         func->buildIR(irBuilder, symTab);
 }
@@ -136,14 +160,22 @@ void FuncDefAST::setSymbolTable(SymbolTable *symTab)
 
 void FuncDefAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    irBuilder->startFunc(funcName, std::string(),
-                         std::string(funcType == TypeEnum::TYPE_INT ? ": i32" : ""));
-
     symTab->currentFuncName = funcName;
-    funcBody->buildIR(irBuilder, symTab);
-    symTab->currentFuncName.clear();
 
+    std::string inputType = paras->buildIRRetString(irBuilder, symTab);
+    std::string outputType = std::string(funcType == TypeEnum::TYPE_INT ? ": i32" : "");
+
+    irBuilder->startFunc(funcName, inputType, outputType);
+    funcBody->buildIR(irBuilder, symTab);
+    if (funcType == TypeEnum::TYPE_VOID)
+    {
+        std::string stmt = std::string("ret");
+        irBuilder->pushStmt(stmt);
+        irBuilder->pushAndGetBlock(true);
+    }
     irBuilder->endFunc();
+
+    symTab->currentFuncName.clear();
 }
 
 /* BlockAST */
@@ -212,16 +244,40 @@ void BlockAST::setSymbolTable(SymbolTable *symTab)
 void BlockAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
     symTab->enterBlock();
-    std::vector<SymbolEntry *> symEntryVec = symTab->match();
 
+    if (symTab->currentBlockVecIndex.size() == 1)
+    {
+        /*分配数组空间，只分配，不赋值*/
+        for (SymbolEntry *sym : symTab->symVec)
+        {
+            if (sym->isArray() && sym->blockVecIndex.size() >= 1 &&
+                sym->blockVecIndex[0] == symTab->currentBlockVecIndex[0])
+            {
+                std::string newName = sym->getIRVarName();
+                std::string typeName = irBuilder->getIRType(sym->arrayDimVec);
+                std::string stmt = newName + std::string(" = alloc ") + typeName;
+                irBuilder->pushStmt(stmt);
+            }
+        }
+    }
+
+    std::vector<SymbolEntry *> symEntryVec = symTab->match();
     for (SymbolEntry *sym : symEntryVec)
     {
-        if ((!sym->isArray()) && sym->defi == DefiEnum::DEFI_VAR)
+        if (sym->defi == DefiEnum::DEFI_VAR && !sym->isArray())
         {
-            std::string stmt = sym->getIRVarName() + std::string(" = alloc i32");
+            std::string newName = sym->getIRVarName();
+            std::string stmt = newName + std::string(" = alloc i32");
             irBuilder->pushStmt(stmt);
+            if (sym->isFuncPara())
+            {
+                std::string paraName = sym->getIRVarName(true);
+                std::string stmt = std::string("store ") + paraName + ", " + newName;
+                irBuilder->pushStmt(stmt);
+            }
         }
         /* TODO 分配 变量数组 是在这里分配，还是在函数开头分配？*/
+        /*决定：在函数开头分配*/
     }
 
     for (StmtAST *stmt : stmtVec)
@@ -460,8 +516,10 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
     break;
     case STMT_ASSIGN_ARRAY:
     {
-        /*TODO*/
-        assert(false);
+        std::string rValStr = irBuilder->aggregate1DtoNDString(initvalArray, lVal->getArrayDim());
+        std::string lValStr = lVal->buildIRRetAddr(irBuilder, symTab);
+        std::string stmt = std::string("store ") + rValStr + std::string(", ") + lValStr;
+        irBuilder->pushStmt(stmt);
     }
     break;
     case STMT_EXP:
@@ -1080,10 +1138,12 @@ std::string PrimaryExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *s
         res = lVal->buildIRRetValue(irBuilder, symTab);
         break;
     case PrimEnum::PRI_CALL:
-        assert(false);
-        params = paras->buildIRRetString(irBuilder, symTab);
+        params = std::string("(") + paras->buildIRRetString(irBuilder, symTab) + ")";
         res = irBuilder->getNextIdent();
-        stmt = res + std::string(" = call @") + funcName + params;
+        if (symTab->funcRetVoid(funcName))
+            stmt = std::string("call @") + funcName + params;
+        else
+            stmt = res + std::string(" = call @") + funcName + params;
         irBuilder->pushStmt(stmt);
         break;
     default:
@@ -1279,6 +1339,19 @@ void FuncFParamsAST::setSymbolTable(SymbolTable *symTab)
 
 void FuncFParamsAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
+std::string FuncFParamsAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    int count = 0;
+    std::string inputType;
+    for (FuncFParamAST *para : paraVec)
+    {
+        if (count++ != 0)
+            inputType += ", ";
+        inputType += para->buildIRRetString(irBuilder, symTab);
+    }
+    return inputType;
+}
+
 /* FuncFParamAST */
 
 FuncFParamAST::FuncFParamAST() : type(TypeEnum::TYPE_NONE), para(NULL) {}
@@ -1301,10 +1374,18 @@ void FuncFParamAST::setSymbolTable(SymbolTable *symTab)
         new SymbolEntry(symTab, para->type, para->defi, symTab->currentFuncName,
                         symTab->currentBlockVecIndex, symTab->currentBlockLineIndex, para->ident,
                         para->getArrayDim(), 0, std::vector<int>(), true);
+    para->relaSym = sym;
     symTab->append(sym);
 }
 
 void FuncFParamAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
+
+std::string FuncFParamAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
+{
+    std::string irName = para->relaSym->getIRVarName(true);
+    std::string typeName = irBuilder->getIRType(para->relaSym->arrayDimVec);
+    return irName + ": " + typeName;
+}
 
 /* FuncRParamsAST */
 
@@ -1346,8 +1427,15 @@ void FuncRParamsAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 std::string FuncRParamsAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    /*TODO*/
-    return std::string("()");
+    int count = 0;
+    std::string inputType;
+    for (ExpAST *exp : expVec)
+    {
+        if (count++ != 0)
+            inputType += ", ";
+        inputType += exp->buildIRRetString(irBuilder, symTab);
+    }
+    return inputType;
 }
 
 /* DataLValIdentAST */

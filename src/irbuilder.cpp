@@ -1,10 +1,8 @@
 #include "irbuilder.hpp"
+#include "keyword.hpp"
+#include <functional>
 
 // const static char emptyMainKoopaIRString[] = "fun @%s(): i32 {\n%%entry:\n  ret %d\n}\n";
-
-/* IRStmt */
-
-IRStmt::IRStmt() : hello(0) {}
 
 /* IRBlock */
 
@@ -71,8 +69,12 @@ void IRBuilder::buildFrom(CompUnitAST *ast, SymbolTable *symTab)
 
 void IRBuilder::Dump(std::ostream &outStream) const
 {
-    // for (IRGloData *data : dataVec)
-    // outStream << *data << std::endl;
+    for (auto p = libFuncDecl; (*p)[0]; p++)
+        outStream << "decl @" << (*p)[0] << '(' << (*p)[1] << ')' << (*p)[2] << std::endl;
+    outStream << std::endl;
+    for (const std::string &data : dataVec)
+        outStream << data << std::endl;
+    outStream << std::endl;
     for (IRFunction *func : funcVec)
         outStream << *func << std::endl;
 }
@@ -179,6 +181,39 @@ void IRBuilder::connectWhile(std::string cond, IRBlock *entryBlock, std::string 
 
     std::string mainJumpStmt = std::string("jump ") + testName;
     mainBlock->stmtVec.push_back(mainJumpStmt);
+}
+std::string IRBuilder::getIRType(const std::vector<int> &arrayDim_)
+{
+    std::string typeName("i32");
+    for (auto iter = arrayDim_.rbegin(); iter != arrayDim_.rend(); iter++)
+    {
+        int dim = *iter;
+        if (dim != -1)
+            typeName = std::string("[") + typeName + ", " + std::to_string(dim) + "]";
+        else
+            typeName = std::string("*") + typeName;
+    }
+    return typeName;
+}
+
+std::string IRBuilder::aggregate1DtoNDString(const std::vector<int> &initvalVec,
+                                             const std::vector<int> &arrayDim)
+{
+    std::vector<int>::const_iterator valIter = initvalVec.begin(), dimIter = arrayDim.begin(),
+                                     dimIterEnd = arrayDim.end();
+
+    std::function<std::string(std::vector<int>::const_iterator)> factorial =
+        [&factorial, &valIter, &dimIterEnd](std::vector<int>::const_iterator dimIter) -> std::string
+    {
+        if (dimIter == dimIterEnd)
+            return std::to_string(*(valIter++));
+        std::string retString = "{";
+        for (int i = 0; i < *dimIter; i++)
+            retString += std::string(i ? ", " : "") + factorial(dimIter + 1);
+        retString += "}";
+        return retString;
+    };
+    return factorial(dimIter);
 }
 
 std::ostream &operator<<(std::ostream &outStream, const IRBuilder &build)

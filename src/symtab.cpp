@@ -1,5 +1,6 @@
 #include "symtab.hpp"
 #include "ast.hpp"
+#include <assert.h>
 
 /* SymbolEntry */
 
@@ -62,7 +63,7 @@ void SymbolEntry::Dump(std::ostream &outStream) const
     outStream << ']' << std::endl;
 }
 
-std::string SymbolEntry::getIRVarName() const
+std::string SymbolEntry::getIRVarName(bool isParamEnd) const
 {
     auto replaceFunc = [](std::string originalString, std::string searchString,
                           std::string replaceString) -> std::string
@@ -80,8 +81,11 @@ std::string SymbolEntry::getIRVarName() const
     newVarName += replaceFunc(ident, std::string("_"), std::string("__"));
     for (int number : blockVecIndex)
         newVarName += std::string("_") + std::to_string(number);
-    if (funcPara)
+    if (isParamEnd)
+    {
+        assert(funcPara);
         newVarName += std::string("_") + std::string("isparam");
+    }
     return newVarName;
 }
 
@@ -95,7 +99,7 @@ std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &entry)
 
 SymbolTable::SymbolTable()
     : currentFuncName(), currentBlockVecIndex(), currentBlockVecIndexTail(0),
-      currentBlockLineIndex(0), symVec()
+      currentBlockLineIndex(0), symVec(), funcTypeIsVoid()
 {
 }
 
@@ -152,8 +156,8 @@ SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum def
         // continue;
         if (sym->ident != ident_)
             continue;
-        if (sym->funcName != funcName_)
-            continue;
+        // if (sym->funcName != funcName_)
+        // continue;
         int entryBlockVecIndexSize = sym->blockVecIndex.size();
         if (entryBlockVecIndexSize > blockVecIndex_.size())
             continue;
@@ -196,6 +200,9 @@ std::vector<SymbolEntry *> SymbolTable::match(std::string funcName_,
 void SymbolTable::buildFrom(CompUnitAST *ast)
 {
     resetCursor();
+    for (auto p = libFuncDecl; (*p)[0]; p++)
+        funcTypeIsVoid.insert(
+            std::make_pair(std::string((*p)[0]), (std::string((*p)[2]).length() == 0)));
     ast->setSymbolTable(this);
     resetCursor();
 }
@@ -210,6 +217,15 @@ void SymbolTable::Dump(std::ostream &outStream) const
         elem->Dump(outStream);
         cnt++;
     }
+}
+
+bool SymbolTable::funcRetVoid(std::string funcName_)
+{
+    if (funcTypeIsVoid.count(funcName_))
+        return funcTypeIsVoid.at(funcName_);
+    else
+        assert(false);
+    return false;
 }
 
 std::ostream &operator<<(std::ostream &outStream, const SymbolTable &symTab)

@@ -242,6 +242,7 @@ class FuncFParamsAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
+    std::string buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class FuncFParamAST : public BaseAST
@@ -256,6 +257,7 @@ class FuncFParamAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
+    std::string buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab);
 };
 
 class FuncRParamsAST : public BaseAST

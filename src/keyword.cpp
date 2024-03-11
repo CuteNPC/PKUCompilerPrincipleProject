@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 const char *defiName[] = {"NONE", "Var", "Const", "LVal"};
 const char *typeName[] = {"NONE", "void", "int", "const"};
 const char *optName[] = {
@@ -15,3 +17,8 @@ const char *optName[] = {
     "OP_NOT_L", "OP_AND_L", "OP_OR_L",
 
 };
+
+const char *libFuncDecl[][3] = {
+    {"getint", "", ": i32"}, {"getch", "", ": i32"}, {"getarray", "*i32", ": i32"},
+    {"putint", "i32", ""},   {"putch", "i32", ""},   {"putarray", "*i32, *i32", ""},
+    {"starttime", "", ""},   {"stoptime", "", ""},   {NULL, NULL, NULL}};

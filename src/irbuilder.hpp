@@ -9,17 +9,11 @@
 #include <iostream>
 #include <sstream>
 
-class IRStmt;
 class IRBlock;
 class IRFunction;
 class IRBuilder;
 
-class IRStmt
-{
-  public:
-    int hello;
-    IRStmt();
-};
+
 
 class IRBlock
 {
@@ -48,13 +42,6 @@ class IRFunction
     friend std::ostream &operator<<(std::ostream &outStream, const IRFunction &block);
 };
 
-class IRGloData
-{
-  public:
-    int hello;
-    /*TODO*/
-};
-
 class IRBuilder
 {
   public:
@@ -70,7 +57,7 @@ class IRBuilder
     std::string whileTestBlockName;
     std::string whileEndBlockName;
 
-    std::vector<IRGloData *> dataVec;
+    std::vector<std::string> dataVec;
     std::vector<IRFunction *> funcVec;
 
     IRBuilder();
@@ -93,6 +80,8 @@ class IRBuilder
                       std::string endName);
     void Dump(std::ostream &outStream) const;
     friend std::ostream &operator<<(std::ostream &outStream, const IRBuilder &block);
+    std::string getIRType(const std::vector<int> &arrayDim_ = std::vector<int>());
+    std::string aggregate1DtoNDString(const std::vector<int> &initvalVec, const std::vector<int> &arrayDim);
 };
 
 #endif // !_IRBUILDER_HPP_
