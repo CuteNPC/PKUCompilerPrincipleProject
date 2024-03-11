@@ -200,6 +200,9 @@ std::string IRBuilder::getIRType(const std::vector<int> &arrayDim_)
 std::string IRBuilder::aggregate1DtoNDString(const std::vector<int> &initvalVec,
                                              const std::vector<int> &arrayDim)
 {
+    if (initvalVec.size() == 0)
+        return std::string("zeroinit");
+
     std::vector<int>::const_iterator valIter = initvalVec.begin(), dimIter = arrayDim.begin(),
                                      dimIterEnd = arrayDim.end();
 

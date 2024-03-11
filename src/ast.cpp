@@ -1272,9 +1272,9 @@ void DataDefAST::setSymbolTable(SymbolTable *symTab)
 
     std::vector<int> arrayDimVec_ = defIdent->getArrayDim(symTab);
     std::string ident_ = defIdent->ident;
-    int arrayDimCum = 1;
-    for (int e : arrayDimVec_)
-        arrayDimCum *= e;
+    // int arrayDimCum = 1;
+    // for (int e : arrayDimVec_)
+    // arrayDimCum *= e;
 
     int initval_ = 0;
     std::vector<int> initvalArray_;
@@ -1295,7 +1295,7 @@ void DataDefAST::setSymbolTable(SymbolTable *symTab)
         if (initval != NULL)
             initvalArray_ = initval->getInitVector(arrayDimVec_);
         else
-            initvalArray_ = std::vector<int>(arrayDimCum);
+            initvalArray_ = std::vector<int>();
     }
 
     if (arrayDimVec_.size() == 0 && setStmtAfterSym)
@@ -1399,7 +1399,7 @@ void FuncFParamAST::setSymbolTable(SymbolTable *symTab)
     SymbolEntry *sym =
         new SymbolEntry(symTab, para->type, para->defi, symTab->currentFuncName,
                         symTab->currentBlockVecIndex, symTab->currentBlockLineIndex, para->ident,
-                        para->getArrayDim(), 0, std::vector<int>(), true);
+                        para->getArrayDim(symTab), 0, std::vector<int>(), true);
     para->relaSym = sym;
     symTab->append(sym);
 }
@@ -1587,8 +1587,11 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
                 irBuilder->pushStmt(stmt);
             }
         }
-        std::string addr = last;
         std::string res = irBuilder->getNextIdent();
+        if (expVec.size() != relaSym->arrayDimVec.size() && relaSym->isFuncPara() &&
+            expVec.size() == 0)
+            return last;
+        std::string addr = last;
         std::string stmt;
         if (expVec.size() == relaSym->arrayDimVec.size())
             stmt = res + " = load " + addr;

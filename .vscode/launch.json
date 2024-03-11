@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv9/17_sort3.c",
+                "testcases/perf/15_transpose0.c",
                 "-o",
                 "temp/koopa.txt"
             ],
