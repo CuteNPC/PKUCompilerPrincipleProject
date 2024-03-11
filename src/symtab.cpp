@@ -26,6 +26,8 @@ bool SymbolEntry::isArray() const { return !arrayDimVec.empty(); }
 
 bool SymbolEntry::isGlobal() const { return blockVecIndex.empty(); }
 
+bool SymbolEntry::isConst() const { return defi == DefiEnum::DEFI_CONST; }
+
 bool SymbolEntry::isFuncPara() const { return funcPara; }
 
 bool SymbolEntry::isEmptyStartArray() const
@@ -168,33 +170,8 @@ SymbolEntry *SymbolTable::match(std::string ident_, TypeEnum type_, DefiEnum def
         if (ok)
             return sym;
     }
+    assert(false);
     return NULL;
-}
-
-std::vector<SymbolEntry *> SymbolTable::match() const
-{
-    return match(currentFuncName, currentBlockVecIndex);
-}
-
-std::vector<SymbolEntry *> SymbolTable::match(std::string funcName_,
-                                              const std::vector<int> &blockVecIndex_) const
-{
-    std::vector<SymbolEntry *> res;
-    int len = blockVecIndex_.size();
-    for (SymbolEntry *sym : symVec)
-    {
-        if (sym->funcName != funcName_)
-            continue;
-        if (len != sym->blockVecIndex.size())
-            continue;
-        bool push = true;
-        for (int i = 0; i < len; i++)
-            if (blockVecIndex_[i] != sym->blockVecIndex[i])
-                push = false;
-        if (push)
-            res.push_back(sym);
-    }
-    return res;
 }
 
 void SymbolTable::buildFrom(CompUnitAST *ast)

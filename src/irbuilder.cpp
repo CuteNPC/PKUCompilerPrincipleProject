@@ -15,9 +15,9 @@ IRBlock::IRBlock(std::string blockName_, bool deadBlock_, std::vector<std::strin
 
 void IRBlock::Dump(std::ostream &outStream) const
 {
-    outStream << blockName << ':' << std::endl;
+    outStream << "  " << blockName << ':' << std::endl;
     for (const std::string &elem : stmtVec)
-        outStream << "  " << elem << std::endl;
+        outStream << "    " << elem << std::endl;
     outStream << std::endl;
 }
 
@@ -39,7 +39,8 @@ IRFunction::IRFunction(std::string funcName_, std::string inputType_, std::strin
 
 void IRFunction::Dump(std::ostream &outStream) const
 {
-    outStream << "fun @" << funcName << '(' << inputType << ')' << outputType << " {" << std::endl;
+    outStream << "fun @" << funcName << '(' << inputType << ')' << outputType << std::endl;
+    outStream << "{" << std::endl;
     outStream << std::endl;
     for (IRBlock *block : blockVec)
         if ((!block->deadBlock) && (block->stmtVec.size() != 0))

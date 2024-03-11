@@ -96,28 +96,35 @@ void CompUnitAST::setSymbolTable(SymbolTable *symTab)
 
 void CompUnitAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    /* TODO 构建 全局声明*/
-    std::vector<SymbolEntry *> symEntryVec = symTab->match();
-
-    for (SymbolEntry *sym : symEntryVec)
+    /*
+    任务
+    1.找出所有的 全局变量整数，global alloc
+    2.找出所有的 非（局部变量）的数组，global alloc
+    */
+    for (SymbolEntry *sym : symTab->symVec)
     {
-        if (sym->defi == DefiEnum::DEFI_VAR && !sym->isArray())
+        if (sym->isGlobal() && !sym->isConst() && !sym->isArray())
         {
             std::string newName = sym->getIRVarName();
-            std::string stmt = std::string("global ") + newName + std::string(" = alloc i32, ") +
-                               std::to_string(sym->initval);
+            std::string typeName = std::string("i32");
+            std::string initVal = std::to_string(sym->initval);
+            std::string stmt =
+                std::string("global ") + newName + " = alloc " + typeName + ", " + initVal;
             irBuilder->dataVec.push_back(stmt);
         }
-        if (sym->isArray())
+
+        if ((sym->isGlobal() || sym->isConst()) && sym->isArray())
         {
             std::string newName = sym->getIRVarName();
-            std::string stmt =
-                std::string("global ") + newName + " = alloc " +
-                irBuilder->getIRType(sym->arrayDimVec) + ", " +
+            std::string typeName = irBuilder->getIRType(sym->arrayDimVec);
+            std::string initVal =
                 irBuilder->aggregate1DtoNDString(sym->initvalArray, sym->arrayDimVec);
+            std::string stmt =
+                std::string("global ") + newName + " = alloc " + typeName + ", " + initVal;
             irBuilder->dataVec.push_back(stmt);
         }
     }
+
     for (FuncDefAST *func : funcVec)
         func->buildIR(irBuilder, symTab);
 }
@@ -247,10 +254,25 @@ void BlockAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 
     if (symTab->currentBlockVecIndex.size() == 1)
     {
-        /*分配数组空间，只分配，不赋值*/
+        /*函数参数分配空间与赋值，要求：当前在函数块的开头，是属于这个函数块的，是参数*/
         for (SymbolEntry *sym : symTab->symVec)
         {
-            if (sym->isArray() && sym->blockVecIndex.size() >= 1 &&
+            if (sym->isFuncPara() && sym->blockVecIndex[0] == symTab->currentBlockVecIndex[0])
+            {
+                std::string newName = sym->getIRVarName();
+                std::string typeName = irBuilder->getIRType(sym->arrayDimVec);
+                std::string stmt = newName + std::string(" = alloc ") + typeName;
+                irBuilder->pushStmt(stmt);
+                std::string paraName = sym->getIRVarName(true);
+                stmt = std::string("store ") + paraName + ", " + newName;
+                irBuilder->pushStmt(stmt);
+            }
+        }
+
+        /*局部变量数组，非函数参数的，并且块相同*/
+        for (SymbolEntry *sym : symTab->symVec)
+        {
+            if (!sym->isFuncPara() && sym->isArray() && !sym->isGlobal() && !sym->isConst() &&
                 sym->blockVecIndex[0] == symTab->currentBlockVecIndex[0])
             {
                 std::string newName = sym->getIRVarName();
@@ -261,27 +283,26 @@ void BlockAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
         }
     }
 
-    std::vector<SymbolEntry *> symEntryVec = symTab->match();
-    for (SymbolEntry *sym : symEntryVec)
+    for (SymbolEntry *sym : symTab->symVec)
     {
-        if (sym->defi == DefiEnum::DEFI_VAR && !sym->isArray())
+        /*变量赋值*/
+        if (!sym->isArray() && !sym->isFuncPara() && !sym->isGlobal() && !sym->isConst())
         {
+            int len = symTab->currentBlockVecIndex.size();
+            if (len != sym->blockVecIndex.size())
+                continue;
+            for (int i = 0; i < len; i++)
+                if (symTab->currentBlockVecIndex[i] != sym->blockVecIndex[i])
+                    continue;
             std::string newName = sym->getIRVarName();
             std::string stmt = newName + std::string(" = alloc i32");
             irBuilder->pushStmt(stmt);
-            if (sym->isFuncPara())
-            {
-                std::string paraName = sym->getIRVarName(true);
-                std::string stmt = std::string("store ") + paraName + ", " + newName;
-                irBuilder->pushStmt(stmt);
-            }
         }
-        /* TODO 分配 变量数组 是在这里分配，还是在函数开头分配？*/
-        /*决定：在函数开头分配*/
     }
 
     for (StmtAST *stmt : stmtVec)
         stmt->buildIR(irBuilder, symTab);
+
     symTab->leaveBlock();
 }
 
@@ -516,9 +537,11 @@ void StmtAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
     break;
     case STMT_ASSIGN_ARRAY:
     {
-        std::string rValStr = irBuilder->aggregate1DtoNDString(initvalArray, lVal->getArrayDim());
-        std::string lValStr = lVal->buildIRRetAddr(irBuilder, symTab);
-        std::string stmt = std::string("store ") + rValStr + std::string(", ") + lValStr;
+        std::string rValStr =
+            irBuilder->aggregate1DtoNDString(initvalArray, lVal->relaSym->arrayDimVec);
+        // std::string lValStr = lVal->buildIRRetAddr(irBuilder, symTab);
+        std::string stmt =
+            std::string("store ") + rValStr + std::string(", ") + lVal->relaSym->getIRVarName();
         irBuilder->pushStmt(stmt);
     }
     break;
@@ -1504,6 +1527,8 @@ void DataLValIdentAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable *symTab)
 {
+    if (!relaSym)
+        setSymbolTable(symTab);
     if (!relaSym->isArray())
     {
         /*局部变量，全局变量*/
@@ -1522,14 +1547,18 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
     }
     else
     {
-        /*TODO*/
-        assert(false);
-        /*数组*/
+        std::string addr = buildIRRetAddr(irBuilder, symTab);
+        std::string res = irBuilder->getNextIdent();
+        std::string stmt = res + " = load " + addr;
+        irBuilder->pushStmt(stmt);
+        return res;
     }
 }
 
 std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *symTab)
 {
+    if (!relaSym)
+        setSymbolTable(symTab);
     if (!relaSym->isArray())
     {
         /*局部变量，全局变量*/
@@ -1537,15 +1566,22 @@ std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *
             return relaSym->getIRVarName();
         /*局部常量，全局常量*/
         else if (relaSym->defi == DefiEnum::DEFI_CONST)
-            return std::to_string(relaSym->initval);
+            assert(false);
         else
             assert(false);
     }
     else
     {
-        /*TODO*/
-        assert(false);
-        /*数组*/
+        std::string last = relaSym->getIRVarName(), next, stmt;
+        for (auto exp : expVec)
+        {
+            std::string expRes = exp->buildIRRetString(irBuilder, symTab);
+            next = irBuilder->getNextIdent();
+            stmt = next + " = getelemptr " + last + ", " + expRes;
+            last = next;
+            irBuilder->pushStmt(stmt);
+        }
+        return last;
     }
 }
 

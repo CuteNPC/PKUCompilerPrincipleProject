@@ -39,6 +39,7 @@ class SymbolEntry
     ~SymbolEntry();
     bool isArray() const;
     bool isGlobal() const;
+    bool isConst() const;
     bool isFuncPara() const;
     bool isEmptyStartArray() const;
     void Dump(std::ostream &outStream = std::cout) const;
@@ -61,9 +62,6 @@ class SymbolTable
     SymbolEntry *match(std::string ident, TypeEnum type_, DefiEnum defi_) const;
     SymbolEntry *match(std::string ident, TypeEnum type_, DefiEnum defi_, std::string funcName_,
                        const std::vector<int> &blockVecIndex_) const;
-    std::vector<SymbolEntry *> match() const;
-    std::vector<SymbolEntry *> match(std::string funcName_,
-                                     const std::vector<int> &blockVecIndex_) const;
     void append(SymbolEntry *sym_);
     void enterBlock();
     void leaveBlock();
