@@ -20,5 +20,5 @@ const char *optName[] = {
 
 const char *libFuncDecl[][3] = {
     {"getint", "", ": i32"}, {"getch", "", ": i32"}, {"getarray", "*i32", ": i32"},
-    {"putint", "i32", ""},   {"putch", "i32", ""},   {"putarray", "*i32, *i32", ""},
+    {"putint", "i32", ""},   {"putch", "i32", ""},   {"putarray", "i32, *i32", ""},
     {"starttime", "", ""},   {"stoptime", "", ""},   {NULL, NULL, NULL}};

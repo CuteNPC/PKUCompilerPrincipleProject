@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/lv9/11_arr_params.c",
+                "testcases/lv9/17_sort3.c",
                 "-o",
                 "temp/koopa.txt"
             ],

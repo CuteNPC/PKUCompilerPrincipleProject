@@ -291,9 +291,12 @@ void BlockAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
             int len = symTab->currentBlockVecIndex.size();
             if (len != sym->blockVecIndex.size())
                 continue;
+            int fail = false;
             for (int i = 0; i < len; i++)
                 if (symTab->currentBlockVecIndex[i] != sym->blockVecIndex[i])
-                    continue;
+                    fail = true;
+            if (fail)
+                continue;
             std::string newName = sym->getIRVarName();
             std::string stmt = newName + std::string(" = alloc i32");
             irBuilder->pushStmt(stmt);
@@ -1547,9 +1550,50 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
     }
     else
     {
-        std::string addr = buildIRRetAddr(irBuilder, symTab);
+        std::string last;
+        if (!relaSym->isFuncPara())
+        {
+            /* TODO 普通数组 */
+            std::string next, stmt;
+            last = relaSym->getIRVarName();
+            for (auto exp : expVec)
+            {
+                std::string expRes = exp->buildIRRetString(irBuilder, symTab);
+                next = irBuilder->getNextIdent();
+                stmt = next + " = getelemptr " + last + ", " + expRes;
+                last = next;
+                irBuilder->pushStmt(stmt);
+            }
+        }
+        else
+        {
+            /* TODO 数组参数 */
+            std::string next, stmt, expRes;
+            last = relaSym->getIRVarName();
+            next = irBuilder->getNextIdent();
+            stmt = next + " = load " + last;
+            last = next;
+            irBuilder->pushStmt(stmt);
+            int count = 0;
+            for (auto exp : expVec)
+            {
+                expRes = exp->buildIRRetString(irBuilder, symTab);
+                next = irBuilder->getNextIdent();
+                if (count++)
+                    stmt = next + " = getelemptr " + last + ", " + expRes;
+                else
+                    stmt = next + " = getptr " + last + ", " + expRes;
+                last = next;
+                irBuilder->pushStmt(stmt);
+            }
+        }
+        std::string addr = last;
         std::string res = irBuilder->getNextIdent();
-        std::string stmt = res + " = load " + addr;
+        std::string stmt;
+        if (expVec.size() == relaSym->arrayDimVec.size())
+            stmt = res + " = load " + addr;
+        else
+            stmt = res + " = getelemptr " + addr + ", 0";
         irBuilder->pushStmt(stmt);
         return res;
     }
@@ -1570,14 +1614,37 @@ std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *
         else
             assert(false);
     }
-    else
+    else if (!relaSym->isFuncPara())
     {
+        /* TODO 普通数组 */
         std::string last = relaSym->getIRVarName(), next, stmt;
         for (auto exp : expVec)
         {
             std::string expRes = exp->buildIRRetString(irBuilder, symTab);
             next = irBuilder->getNextIdent();
             stmt = next + " = getelemptr " + last + ", " + expRes;
+            last = next;
+            irBuilder->pushStmt(stmt);
+        }
+        return last;
+    }
+    else
+    {
+        /* TODO 数组参数 */
+        std::string last = relaSym->getIRVarName(), next, stmt, expRes;
+        next = irBuilder->getNextIdent();
+        stmt = next + " = load " + last;
+        last = next;
+        irBuilder->pushStmt(stmt);
+        int count = 0;
+        for (auto exp : expVec)
+        {
+            expRes = exp->buildIRRetString(irBuilder, symTab);
+            next = irBuilder->getNextIdent();
+            if (count++)
+                stmt = next + " = getelemptr " + last + ", " + expRes;
+            else
+                stmt = next + " = getptr " + last + ", " + expRes;
             last = next;
             irBuilder->pushStmt(stmt);
         }
@@ -1637,7 +1704,7 @@ void DataInitvalAST::setSymbolTable(SymbolTable *symTab) {}
 
 std::vector<int> DataInitvalAST::getInitVector(std::vector<int> arrayDim, SymbolTable *symTab)
 {
-    /* TODO */
+    /* TODO 数组初始化*/
     int cum = 1;
     for (auto e : arrayDim)
         cum *= e;
