@@ -38,7 +38,7 @@ class RiscvBuilder
     void countStmt(const koopa_raw_value_t &stmt);
     void visitStmt(const koopa_raw_value_t &stmt);
 
-    std::string loadValue(const koopa_raw_value_t &value, const char *distReg);
+    std::vector<std::string> loadValue(const koopa_raw_value_t &value, const char *distReg);
     std::string storeValue(const koopa_raw_value_t &value, const char *distReg);
 
     void pushAInst(std::string ainst);
@@ -51,6 +51,7 @@ class RiscvBuilder
     void pushLabel(const char *label);
     void pushCment(const char *cment);
 
+    void pushAInst(const std::vector<std::string> &ainstVec);
     void pushEmpty();
 
     void pushVarIndex(std::string name);
@@ -60,6 +61,8 @@ class RiscvBuilder
     int matchVarIndex(std::string name);
     int matchVarIndex(const char *name);
 
+    int calcArrayTypeSize(koopa_raw_type_t ty);
+    std::vector<int> aggregateNDto1DVector(const koopa_raw_value_t value);
     void dump(std::ostream &outStream = std::cout) const;
     friend std::ostream &operator<<(std::ostream &outStream, const RiscvBuilder &builder);
 };

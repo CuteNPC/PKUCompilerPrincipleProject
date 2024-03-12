@@ -42,7 +42,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-riscv",
-                "testcases/lv4/08_multiple_vars.c",
+                "testcases/lv9/11_arr_params.c",
                 "-o",
                 "temp/riscv.txt"
             ],
