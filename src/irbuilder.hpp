@@ -43,7 +43,8 @@ class IRFunction
 class IRBuilder
 {
   public:
-    int currentTempCounter;
+    int currentVarCounter;
+    int currentBlockCounter;
 
     IRBlock *currentBlock;
 
@@ -68,6 +69,8 @@ class IRBuilder
     void pushAndGetBlock(bool nextIsDeadBlock = false);
     void pushStmt(std::string stmt);
     std::string getNextIdent();
+    std::string getNextVarIdent();
+    std::string getNextBlockIdent();
     void connectIf(std::string cond, IRBlock *entryBlock, std::string thenName, IRBlock *thenBlock,
                    std::string endName);
     void connectIfElse(std::string cond, IRBlock *entryBlock, std::string thenName,

@@ -888,123 +888,123 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         break;
     case OpEnum::OP_NEG:
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = sub 0, ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_NOT_B:
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = xor -1, ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_NOT_L:
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = eq 0, ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_E:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = eq ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_NE:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = ne ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_L:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = lt ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_LE:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = le ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_G:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = gt ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_GE:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = ge ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_ADD:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = add ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_SUB:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = sub ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_MUL:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = mul ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_DIV:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = div ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_MOD:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = mod ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_AND_B:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = and ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_OR_B:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = or ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_XOR_B:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = xor ") + left + std::string(", ") + right;
         irBuilder->pushStmt(stmt);
         break;
     case OpEnum::OP_AND_L:
         left = leftExp->buildIRRetString(irBuilder, symTab);
-        resPtr = irBuilder->getNextIdent();
+        resPtr = irBuilder->getNextVarIdent();
         stmt = resPtr + std::string(" = alloc i32");
         irBuilder->pushStmt(stmt);
         stmt = std::string("store 0, ") + resPtr;
@@ -1015,7 +1015,7 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         thenName = irBuilder->currentBlock->blockName;
 
         right2 = rightExp->buildIRRetString(irBuilder, symTab);
-        right = irBuilder->getNextIdent();
+        right = irBuilder->getNextVarIdent();
         stmt = right + std::string(" = ne 0, ") + right2;
         irBuilder->pushStmt(stmt);
         stmt = std::string("store ") + right + std::string(", ") + resPtr;
@@ -1025,7 +1025,7 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         irBuilder->pushAndGetBlock();
         endName = irBuilder->currentBlock->blockName;
 
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = load ") + resPtr;
         irBuilder->pushStmt(stmt);
 
@@ -1034,10 +1034,10 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
     case OpEnum::OP_OR_L:
         /*TODO 其他实现？*/
         left2 = leftExp->buildIRRetString(irBuilder, symTab);
-        left = irBuilder->getNextIdent();
+        left = irBuilder->getNextVarIdent();
         stmt = left + std::string(" = eq 0, ") + left2;
         irBuilder->pushStmt(stmt);
-        resPtr = irBuilder->getNextIdent();
+        resPtr = irBuilder->getNextVarIdent();
         stmt = resPtr + std::string(" = alloc i32");
         irBuilder->pushStmt(stmt);
         stmt = std::string("store 1, ") + resPtr;
@@ -1048,7 +1048,7 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         thenName = irBuilder->currentBlock->blockName;
 
         right2 = rightExp->buildIRRetString(irBuilder, symTab);
-        right = irBuilder->getNextIdent();
+        right = irBuilder->getNextVarIdent();
         stmt = right + std::string(" = ne 0, ") + right2;
         irBuilder->pushStmt(stmt);
         stmt = std::string("store ") + right + std::string(", ") + resPtr;
@@ -1058,7 +1058,7 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         irBuilder->pushAndGetBlock();
         endName = irBuilder->currentBlock->blockName;
 
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         stmt = res + std::string(" = load ") + resPtr;
         irBuilder->pushStmt(stmt);
 
@@ -1165,7 +1165,7 @@ std::string PrimaryExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *s
         break;
     case PrimEnum::PRI_CALL:
         params = std::string("(") + paras->buildIRRetString(irBuilder, symTab) + ")";
-        res = irBuilder->getNextIdent();
+        res = irBuilder->getNextVarIdent();
         if (symTab->funcRetVoid(funcName))
             stmt = std::string("call @") + funcName + params;
         else
@@ -1537,7 +1537,7 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
         /*局部变量，全局变量*/
         if (relaSym->defi == DefiEnum::DEFI_VAR)
         {
-            std::string res = irBuilder->getNextIdent();
+            std::string res = irBuilder->getNextVarIdent();
             std::string stmt = res + std::string(" = load ") + relaSym->getIRVarName();
             irBuilder->pushStmt(stmt);
             return res;
@@ -1559,7 +1559,7 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
             for (auto exp : expVec)
             {
                 std::string expRes = exp->buildIRRetString(irBuilder, symTab);
-                next = irBuilder->getNextIdent();
+                next = irBuilder->getNextVarIdent();
                 stmt = next + " = getelemptr " + last + ", " + expRes;
                 last = next;
                 irBuilder->pushStmt(stmt);
@@ -1570,7 +1570,7 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
             /* TODO 数组参数 */
             std::string next, stmt, expRes;
             last = relaSym->getIRVarName();
-            next = irBuilder->getNextIdent();
+            next = irBuilder->getNextVarIdent();
             stmt = next + " = load " + last;
             last = next;
             irBuilder->pushStmt(stmt);
@@ -1578,7 +1578,7 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
             for (auto exp : expVec)
             {
                 expRes = exp->buildIRRetString(irBuilder, symTab);
-                next = irBuilder->getNextIdent();
+                next = irBuilder->getNextVarIdent();
                 if (count++)
                     stmt = next + " = getelemptr " + last + ", " + expRes;
                 else
@@ -1587,7 +1587,7 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
                 irBuilder->pushStmt(stmt);
             }
         }
-        std::string res = irBuilder->getNextIdent();
+        std::string res = irBuilder->getNextVarIdent();
         if (expVec.size() != relaSym->arrayDimVec.size() && relaSym->isFuncPara() &&
             expVec.size() == 0)
             return last;
@@ -1624,7 +1624,7 @@ std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *
         for (auto exp : expVec)
         {
             std::string expRes = exp->buildIRRetString(irBuilder, symTab);
-            next = irBuilder->getNextIdent();
+            next = irBuilder->getNextVarIdent();
             stmt = next + " = getelemptr " + last + ", " + expRes;
             last = next;
             irBuilder->pushStmt(stmt);
@@ -1635,7 +1635,7 @@ std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *
     {
         /* TODO 数组参数 */
         std::string last = relaSym->getIRVarName(), next, stmt, expRes;
-        next = irBuilder->getNextIdent();
+        next = irBuilder->getNextVarIdent();
         stmt = next + " = load " + last;
         last = next;
         irBuilder->pushStmt(stmt);
@@ -1643,7 +1643,7 @@ std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *
         for (auto exp : expVec)
         {
             expRes = exp->buildIRRetString(irBuilder, symTab);
-            next = irBuilder->getNextIdent();
+            next = irBuilder->getNextVarIdent();
             if (count++)
                 stmt = next + " = getelemptr " + last + ", " + expRes;
             else

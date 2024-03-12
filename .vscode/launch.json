@@ -5,13 +5,44 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Compiler",
+            "name": "Debug Koopa",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/compiler",
+            "args": [
+                "-koopa",
+                "testcases/perf/19_brainfuck-calculator.c",
+                "-o",
+                "temp/koopa.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            // "justMyCode": false,
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Makefile"
+        },
+        {
+            "name": "Debug Riscv",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-riscv",
-                "testcases/lv1/0_main.c",
+                "testcases/lv4/08_multiple_vars.c",
                 "-o",
                 "temp/riscv.txt"
             ],

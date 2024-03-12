@@ -57,7 +57,8 @@ std::ostream &operator<<(std::ostream &outStream, const IRFunction &func)
 /* IRBuilder */
 
 IRBuilder::IRBuilder()
-    : currentTempCounter(0), currentBlock(NULL), funcName(), blockVec(), dataVec(), funcVec()
+    : currentVarCounter(0), currentBlockCounter(0), currentBlock(NULL),
+      funcName(), blockVec(), dataVec(), funcVec()
 {
 }
 
@@ -82,18 +83,19 @@ void IRBuilder::dump(std::ostream &outStream) const
 
 void IRBuilder::startFunc(std::string funcName_, std::string inputType_, std::string outputType_)
 {
-    currentTempCounter = 0;
+    currentVarCounter = 0;
+    currentBlockCounter = 0;
     funcName = funcName_;
     inputType = inputType_;
     outputType = outputType_;
     blockVec.clear();
 
-    currentBlock = new IRBlock(getNextIdent());
+    setCurrentBlock(getNewBlock());
 }
 
 IRBlock *IRBuilder::getNewBlock(bool nextIsDeadBlock)
 {
-    return new IRBlock(getNextIdent(), nextIsDeadBlock);
+    return new IRBlock(getNextBlockIdent(), nextIsDeadBlock);
 }
 
 void IRBuilder::setCurrentBlock(IRBlock *block)
@@ -130,18 +132,27 @@ void IRBuilder::endFunc()
 
     currentBlock = NULL;
 
-    currentTempCounter = 0;
+    currentVarCounter = 0;
+    currentBlockCounter = 0;
     funcName.clear();
     inputType.clear();
     outputType.clear();
     blockVec.clear();
 }
 
-std::string IRBuilder::getNextIdent()
+std::string IRBuilder::getNextVarIdent()
 {
-    std::string res("%");
-    res += std::to_string(currentTempCounter);
-    currentTempCounter++;
+    std::string res("%VAR");
+    res += std::to_string(currentVarCounter);
+    currentVarCounter++;
+    return res;
+}
+
+std::string IRBuilder::getNextBlockIdent()
+{
+    std::string res("%BLOCK");
+    res += std::to_string(currentBlockCounter);
+    currentBlockCounter++;
     return res;
 }
 
