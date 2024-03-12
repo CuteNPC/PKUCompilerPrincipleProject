@@ -11,7 +11,7 @@
         {
             "label": "AutoTest",
             "type": "shell",
-            "command": "autotest -koopa -s lv1 /root/CompilerPrincipleProject"
+            "command": "autotest -koopa /root/CompilerPrincipleProject; autotest -riscv /root/CompilerPrincipleProject"
         }
     ]
 }

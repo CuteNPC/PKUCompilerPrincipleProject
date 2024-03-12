@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-koopa",
-                "testcases/perf/19_brainfuck-calculator.c",
+                "testcases/lv9/15_sort1.c",
                 "-o",
                 "temp/koopa.txt"
             ],
@@ -42,7 +42,7 @@
             "program": "${workspaceFolder}/build/compiler",
             "args": [
                 "-riscv",
-                "testcases/lv9/11_arr_params.c",
+                "testcases/lv9/15_sort1.c",
                 "-o",
                 "temp/riscv.txt"
             ],
