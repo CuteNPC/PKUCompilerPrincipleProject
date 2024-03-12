@@ -2,7 +2,7 @@
 #include "define.hpp"
 #include "irbuilder.hpp"
 #include "symtab.hpp"
-#include <assert.h>
+#include <cassert>
 #include <iomanip>
 
 /* Indent */
@@ -27,17 +27,17 @@ std::ostream &operator<<(std::ostream &outStream, const Indent &indent)
 
 /* BaseAST */
 
-void BaseAST::Dump(std::ostream &outStream, int indent) const
+void BaseAST::dump(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent) << getClassName() << std::endl;
     outStream << Indent(indent) << "{" << std::endl;
-    DumpContent(outStream, indent);
+    dumpContent(outStream, indent);
     outStream << Indent(indent) << "}" << std::endl;
 }
 
 std::ostream &operator<<(std::ostream &outStream, const BaseAST &ast)
 {
-    ast.Dump(outStream, 0);
+    ast.dump(outStream, 0);
     return outStream;
 }
 
@@ -71,12 +71,12 @@ void CompUnitAST::append(FuncDefAST *func_) { funcVec.push_back(func_); }
 
 const char *CompUnitAST::getClassName() const { return "CompUnitAST"; }
 
-void CompUnitAST::DumpContent(std::ostream &outStream, int indent) const
+void CompUnitAST::dumpContent(std::ostream &outStream, int indent) const
 {
     for (DataDeclAST *decl : declVec)
-        decl->Dump(outStream, indent + 1);
+        decl->dump(outStream, indent + 1);
     for (FuncDefAST *func : funcVec)
-        func->Dump(outStream, indent + 1);
+        func->dump(outStream, indent + 1);
 }
 
 void CompUnitAST::setSymbolTable(SymbolTable *symTab)
@@ -149,12 +149,12 @@ FuncDefAST::~FuncDefAST()
 
 const char *FuncDefAST::getClassName() const { return "FuncDefAST"; }
 
-void FuncDefAST::DumpContent(std::ostream &outStream, int indent) const
+void FuncDefAST::dumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "funcType: " << typeName[(int)(funcType)] << std::endl;
     outStream << Indent(indent + 1) << "funcName: " << funcName << std::endl;
-    paras->Dump(outStream, indent + 1);
-    funcBody->Dump(outStream, indent + 1);
+    paras->dump(outStream, indent + 1);
+    funcBody->dump(outStream, indent + 1);
 }
 
 void FuncDefAST::setSymbolTable(SymbolTable *symTab)
@@ -209,12 +209,12 @@ BlockAST::~BlockAST()
 
 const char *BlockAST::getClassName() const { return "BlockAST"; }
 
-void BlockAST::DumpContent(std::ostream &outStream, int indent) const
+void BlockAST::dumpContent(std::ostream &outStream, int indent) const
 {
     for (BlockItemAST *elem : itemVec)
-        elem->Dump(outStream, indent + 1);
+        elem->dump(outStream, indent + 1);
     for (StmtAST *elem : stmtVec)
-        elem->Dump(outStream, indent + 1);
+        elem->dump(outStream, indent + 1);
 }
 
 void BlockAST::setSymbolTable(SymbolTable *symTab)
@@ -327,14 +327,14 @@ BlockItemAST::~BlockItemAST()
 
 const char *BlockItemAST::getClassName() const { return "BlockItemAST"; }
 
-void BlockItemAST::DumpContent(std::ostream &outStream, int indent) const
+void BlockItemAST::dumpContent(std::ostream &outStream, int indent) const
 {
     if (itemEnum == BlockItemEnum::BLOCK_NONE)
         outStream << Indent(indent + 1) << "NONE" << std::endl;
     if (itemEnum == BlockItemEnum::BLOCK_DECL)
-        decl->Dump(outStream, indent + 1);
+        decl->dump(outStream, indent + 1);
     if (itemEnum == BlockItemEnum::BLOCK_STMT)
-        stmt->Dump(outStream, indent + 1);
+        stmt->dump(outStream, indent + 1);
 }
 
 void BlockItemAST::setSymbolTable(SymbolTable *symTab)
@@ -403,7 +403,7 @@ StmtAST::~StmtAST()
 
 const char *StmtAST::getClassName() const { return "StmtAST"; }
 
-void StmtAST::DumpContent(std::ostream &outStream, int indent) const
+void StmtAST::dumpContent(std::ostream &outStream, int indent) const
 {
     switch (st)
     {
@@ -415,12 +415,12 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
         break;
     case STMT_ASSIGN:
         outStream << Indent(indent + 1) << "STMT_ASSIGN" << std::endl;
-        lVal->Dump(outStream, indent + 1);
-        lOrExp->Dump(outStream, indent + 1);
+        lVal->dump(outStream, indent + 1);
+        lOrExp->dump(outStream, indent + 1);
         break;
     case STMT_ASSIGN_ARRAY:
         outStream << Indent(indent + 1) << "STMT_ASSIGN_ARRAY" << std::endl;
-        lVal->Dump(outStream, indent + 1);
+        lVal->dump(outStream, indent + 1);
         outStream << Indent(indent + 1) << "InitvalArray: [";
         for (int elem : initvalArray)
             outStream << elem << ", ";
@@ -428,34 +428,34 @@ void StmtAST::DumpContent(std::ostream &outStream, int indent) const
         break;
     case STMT_EXP:
         outStream << Indent(indent + 1) << "STMT_EXP" << std::endl;
-        lOrExp->Dump(outStream, indent + 1);
+        lOrExp->dump(outStream, indent + 1);
         break;
     case STMT_RET_INT:
         outStream << Indent(indent + 1) << "STMT_RET_INT" << std::endl;
-        lOrExp->Dump(outStream, indent + 1);
+        lOrExp->dump(outStream, indent + 1);
         break;
     case STMT_RET_VOID:
         outStream << Indent(indent + 1) << "STMT_RET_VOID" << std::endl;
         break;
     case STMT_BLOCK:
         outStream << Indent(indent + 1) << "STMT_BLOCK" << std::endl;
-        block->Dump(outStream, indent + 1);
+        block->dump(outStream, indent + 1);
         break;
     case STMT_IF:
         outStream << Indent(indent + 1) << "STMT_IF" << std::endl;
-        lOrExp->Dump(outStream, indent + 1);
-        mainStmt->Dump(outStream, indent + 1);
+        lOrExp->dump(outStream, indent + 1);
+        mainStmt->dump(outStream, indent + 1);
         break;
     case STMT_IF_ELSE:
         outStream << Indent(indent + 1) << "STMT_IF_ELSE" << std::endl;
-        lOrExp->Dump(outStream, indent + 1);
-        mainStmt->Dump(outStream, indent + 1);
-        elseStmt->Dump(outStream, indent + 1);
+        lOrExp->dump(outStream, indent + 1);
+        mainStmt->dump(outStream, indent + 1);
+        elseStmt->dump(outStream, indent + 1);
         break;
     case STMT_WHILE:
         outStream << Indent(indent + 1) << "STMT_WHILE" << std::endl;
-        lOrExp->Dump(outStream, indent + 1);
-        mainStmt->Dump(outStream, indent + 1);
+        lOrExp->dump(outStream, indent + 1);
+        mainStmt->dump(outStream, indent + 1);
         break;
     case STMT_BREAK:
         outStream << Indent(indent + 1) << "STMT_BREAK" << std::endl;
@@ -709,7 +709,7 @@ ExpAST::~ExpAST()
 
 const char *ExpAST::getClassName() const { return "ExpAST"; }
 
-void ExpAST::DumpContent(std::ostream &outStream, int indent) const
+void ExpAST::dumpContent(std::ostream &outStream, int indent) const
 {
     if (opt == OpEnum::OP_NONE)
     {
@@ -718,14 +718,14 @@ void ExpAST::DumpContent(std::ostream &outStream, int indent) const
     else if (opt == OpEnum::OP_PRI)
     {
         outStream << Indent(indent + 1) << optName[(int)(opt)] << std::endl;
-        primaryExp->Dump(outStream, indent + 1);
+        primaryExp->dump(outStream, indent + 1);
     }
     else
     {
         outStream << Indent(indent + 1) << optName[(int)(opt)] << std::endl;
         if (leftExp)
-            leftExp->Dump(outStream, indent + 1);
-        rightExp->Dump(outStream, indent + 1);
+            leftExp->dump(outStream, indent + 1);
+        rightExp->dump(outStream, indent + 1);
     }
 }
 
@@ -1106,18 +1106,18 @@ PrimaryExpAST::~PrimaryExpAST()
 
 const char *PrimaryExpAST::getClassName() const { return "PrimaryExpAST"; }
 
-void PrimaryExpAST::DumpContent(std::ostream &outStream, int indent) const
+void PrimaryExpAST::dumpContent(std::ostream &outStream, int indent) const
 {
     if (type == PrimEnum::PRI_NONE)
         outStream << Indent(indent + 1) << "NONE" << std::endl;
     if (type == PrimEnum::PRI_CONST)
         outStream << Indent(indent + 1) << "Number: " << constVal << std::endl;
     if (type == PrimEnum::PRI_LVAL)
-        lVal->Dump(outStream, indent + 1);
+        lVal->dump(outStream, indent + 1);
     if (type == PrimEnum::PRI_CALL)
     {
         outStream << Indent(indent + 1) << "FuncName: " << funcName << std::endl;
-        paras->Dump(outStream, indent + 1);
+        paras->dump(outStream, indent + 1);
     }
 }
 
@@ -1206,12 +1206,12 @@ void DataDeclAST::append(DataDefAST *def_)
 
 const char *DataDeclAST::getClassName() const { return "DataDeclAST"; }
 
-void DataDeclAST::DumpContent(std::ostream &outStream, int indent) const
+void DataDeclAST::dumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "Defi: " << defiName[(int)(defi)] << std::endl;
     outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
     for (DataDefAST *def : defVec)
-        def->Dump(outStream, indent + 1);
+        def->dump(outStream, indent + 1);
 }
 
 void DataDeclAST::setSymbolTable(SymbolTable *symTab)
@@ -1247,16 +1247,16 @@ DataDefAST::~DataDefAST()
     assert(stmtAfterSym == NULL);
 }
 
-void DataDefAST::DumpContent(std::ostream &outStream, int indent) const
+void DataDefAST::dumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "Defi: " << defiName[(int)(defi)] << std::endl;
     outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
     if (defIdent)
-        defIdent->Dump(outStream, indent + 1);
+        defIdent->dump(outStream, indent + 1);
     if (initval)
-        initval->Dump(outStream, indent + 1);
+        initval->dump(outStream, indent + 1);
     if (stmtAfterSym)
-        stmtAfterSym->Dump(outStream, indent + 1);
+        stmtAfterSym->dump(outStream, indent + 1);
 }
 
 void DataDefAST::setSymbolTable(SymbolTable *symTab)
@@ -1347,10 +1347,10 @@ void FuncFParamsAST::append(FuncFParamAST *para_)
         paraVec.push_back(para_);
 }
 
-void FuncFParamsAST::DumpContent(std::ostream &outStream, int indent) const
+void FuncFParamsAST::dumpContent(std::ostream &outStream, int indent) const
 {
     for (FuncFParamAST *para : paraVec)
-        para->Dump(outStream, indent + 1);
+        para->dump(outStream, indent + 1);
 }
 
 const char *FuncFParamsAST::getClassName() const { return "FuncFParamsAST"; }
@@ -1386,10 +1386,10 @@ FuncFParamAST::FuncFParamAST(TypeEnum type_, DataLValIdentAST *para_) : type(typ
 
 FuncFParamAST::~FuncFParamAST() {}
 
-void FuncFParamAST::DumpContent(std::ostream &outStream, int indent) const
+void FuncFParamAST::dumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
-    para->Dump(outStream, indent + 1);
+    para->dump(outStream, indent + 1);
 }
 
 const char *FuncFParamAST::getClassName() const { return "FuncFParamAST"; }
@@ -1435,10 +1435,10 @@ void FuncRParamsAST::append(ExpAST *exp_)
         expVec.push_back(exp_);
 }
 
-void FuncRParamsAST::DumpContent(std::ostream &outStream, int indent) const
+void FuncRParamsAST::dumpContent(std::ostream &outStream, int indent) const
 {
     for (ExpAST *exp : expVec)
-        exp->Dump(outStream, indent + 1);
+        exp->dump(outStream, indent + 1);
 }
 
 const char *FuncRParamsAST::getClassName() const { return "FuncRParamsAST"; }
@@ -1495,7 +1495,7 @@ void DataLValIdentAST::append(ExpAST *exp_)
         expVec.push_back(exp_);
 }
 
-void DataLValIdentAST::DumpContent(std::ostream &outStream, int indent) const
+void DataLValIdentAST::dumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "Defi: " << defiName[(int)(defi)] << std::endl;
     outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
@@ -1503,7 +1503,7 @@ void DataLValIdentAST::DumpContent(std::ostream &outStream, int indent) const
     outStream << Indent(indent + 1) << "emptyValStart: " << (emptyValStart ? "YES" : "NO")
               << std::endl;
     for (ExpAST *exp : expVec)
-        exp->Dump(outStream, indent + 1);
+        exp->dump(outStream, indent + 1);
 }
 
 const char *DataLValIdentAST::getClassName() const { return "DataLValIdentAST"; }
@@ -1688,16 +1688,16 @@ void DataInitvalAST::append(DataInitvalAST *initVal_)
         initVec.push_back(initVal_);
 }
 
-void DataInitvalAST::DumpContent(std::ostream &outStream, int indent) const
+void DataInitvalAST::dumpContent(std::ostream &outStream, int indent) const
 {
     outStream << Indent(indent + 1) << "Defi: " << defiName[(int)(defi)] << std::endl;
     outStream << Indent(indent + 1) << "Type: " << typeName[(int)(type)] << std::endl;
     if (exp)
-        exp->Dump(outStream, indent + 1);
+        exp->dump(outStream, indent + 1);
     else
     {
         for (DataInitvalAST *initVal : initVec)
-            initVal->Dump(outStream, indent + 1);
+            initVal->dump(outStream, indent + 1);
     }
 }
 

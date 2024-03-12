@@ -35,9 +35,9 @@ class BaseAST
   public:
     BaseAST() = default;
     virtual ~BaseAST() = default;
-    void Dump(std::ostream &outStream = std::cout, int indent = 0) const;
+    void dump(std::ostream &outStream = std::cout, int indent = 0) const;
     virtual const char *getClassName() const = 0;
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const = 0;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const = 0;
     virtual void setSymbolTable(SymbolTable *symTab) = 0;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) = 0;
     friend std::ostream &operator<<(std::ostream &outStream, const BaseAST &ast);
@@ -55,7 +55,7 @@ class CompUnitAST : public BaseAST
     void append(FuncDefAST *func_);
     virtual ~CompUnitAST();
     virtual const char *getClassName() const override;
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
@@ -74,7 +74,7 @@ class FuncDefAST : public BaseAST
                BlockAST *funcBody_);
     virtual ~FuncDefAST();
     virtual const char *getClassName() const override;
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
@@ -91,7 +91,7 @@ class BlockAST : public BaseAST
     void setIndex(std::vector<int> vecIndex_, int lineIndex_);
     virtual ~BlockAST();
     virtual const char *getClassName() const override;
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
@@ -111,7 +111,7 @@ class BlockItemAST : public BaseAST
     BlockItemAST(StmtAST *stmt_);
     virtual ~BlockItemAST();
     virtual const char *getClassName() const override;
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
@@ -138,7 +138,7 @@ class StmtAST : public BaseAST
     StmtAST(BlockAST *block_);
     StmtAST(StmtEnum st_, ExpAST *lOrExp_, StmtAST *mainStmt_, StmtAST *elseStmt_ = NULL);
     virtual ~StmtAST();
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
@@ -160,7 +160,7 @@ class ExpAST : public BaseAST
     ExpAST(OpEnum opt_, ExpAST *rightExp_);
     ExpAST(OpEnum opt_, ExpAST *leftExp_, ExpAST *rightExp_);
     virtual ~ExpAST();
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     int forceCalc(SymbolTable *symTab);
     virtual void setSymbolTable(SymbolTable *symTab) override;
@@ -188,7 +188,7 @@ class PrimaryExpAST : public BaseAST
     PrimaryExpAST(std::string funcName_, FuncRParamsAST *paras_);
     PrimaryExpAST(const char *funcName_, FuncRParamsAST *paras_);
     virtual ~PrimaryExpAST();
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     int forceCalc(SymbolTable *symTab);
     virtual void setSymbolTable(SymbolTable *symTab) override;
@@ -206,7 +206,7 @@ class DataDeclAST : public BaseAST
     DataDeclAST(DefiEnum defi_, TypeEnum type_, DataDefAST *def_ = NULL);
     virtual ~DataDeclAST();
     void append(DataDefAST *def_);
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
@@ -224,7 +224,7 @@ class DataDefAST : public BaseAST
     DataDefAST(DefiEnum defi_, TypeEnum type_, DataLValIdentAST *defIdent_,
                DataInitvalAST *initval_ = NULL);
     virtual ~DataDefAST();
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
@@ -238,7 +238,7 @@ class FuncFParamsAST : public BaseAST
     FuncFParamsAST(FuncFParamAST *para_);
     virtual ~FuncFParamsAST();
     void append(FuncFParamAST *para_);
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
@@ -253,7 +253,7 @@ class FuncFParamAST : public BaseAST
     FuncFParamAST();
     FuncFParamAST(TypeEnum type_, DataLValIdentAST *para_);
     virtual ~FuncFParamAST();
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
@@ -268,7 +268,7 @@ class FuncRParamsAST : public BaseAST
     FuncRParamsAST(ExpAST *exp_);
     virtual ~FuncRParamsAST();
     void append(ExpAST *exp_);
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
@@ -291,7 +291,7 @@ class DataLValIdentAST : public BaseAST
                      bool emptyValStart = false);
     virtual ~DataLValIdentAST();
     void append(ExpAST *exp_);
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     std::vector<int> getArrayDim(SymbolTable *symTab = NULL);
@@ -312,7 +312,7 @@ class DataInitvalAST : public BaseAST
     DataInitvalAST(DefiEnum defi_, TypeEnum type_, DataInitvalAST *initVal_ = NULL);
     virtual ~DataInitvalAST();
     void append(DataInitvalAST *initVal_);
-    virtual void DumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
+    virtual void dumpContent(std::ostream &outStream = std::cout, int indent = 0) const override;
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     std::vector<int> getInitVector(std::vector<int> arrayDim, SymbolTable *symTab = NULL);

@@ -10,9 +10,9 @@ Arg::Arg(int argc, const char *argv[])
     }
     std::string compilerMode = argv[1];
     if (compilerMode == "-koopa")
-        _toRISCV = false;
+        _toRiscv = false;
     else if (compilerMode == "-riscv")
-        _toRISCV = true;
+        _toRiscv = true;
     else
     {
         std::cerr << "Error compiler mode" << std::endl;
@@ -44,20 +44,13 @@ Arg::Arg(int argc, const char *argv[])
     _ostreamPtr = &(_ostream);
 }
 
-FILE *Arg::inputFile() const
-{
-    return _inputFile;
-}
+FILE *Arg::inputFile() const { return _inputFile; }
 
-std::ostream &Arg::ostream() const
-{
-    return *_ostreamPtr;
-}
+std::ostream &Arg::ostream() const { return *_ostreamPtr; }
 
-bool Arg::toRISCV() const
-{
-    return _toRISCV;
-}
+bool Arg::toRiscv() const { return _toRiscv; }
+
+bool Arg::toKoopa() const { return !_toRiscv; }
 
 Arg::~Arg()
 {

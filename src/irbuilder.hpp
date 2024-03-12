@@ -13,8 +13,6 @@ class IRBlock;
 class IRFunction;
 class IRBuilder;
 
-
-
 class IRBlock
 {
   public:
@@ -24,7 +22,7 @@ class IRBlock
     IRBlock();
     IRBlock(std::string blockName_, bool deadBlock_ = false,
             std::vector<std::string> stmtVec_ = std::vector<std::string>());
-    void Dump(std::ostream &outStream = std::cout) const;
+    void dump(std::ostream &outStream = std::cout) const;
     friend std::ostream &operator<<(std::ostream &outStream, const IRBlock &block);
 };
 
@@ -38,7 +36,7 @@ class IRFunction
     IRFunction();
     IRFunction(std::string funcName_, std::string inputType_, std::string outputType_,
                std::vector<IRBlock *> blockVec_ = std::vector<IRBlock *>());
-    void Dump(std::ostream &outStream = std::cout) const;
+    void dump(std::ostream &outStream = std::cout) const;
     friend std::ostream &operator<<(std::ostream &outStream, const IRFunction &block);
 };
 
@@ -78,10 +76,11 @@ class IRBuilder
     void connectWhile(std::string cond, IRBlock *entryBlock, std::string testName,
                       IRBlock *testBlock, std::string loopName, IRBlock *loopBlock,
                       std::string endName);
-    void Dump(std::ostream &outStream) const;
+    void dump(std::ostream &outStream) const;
     friend std::ostream &operator<<(std::ostream &outStream, const IRBuilder &block);
     std::string getIRType(const std::vector<int> &arrayDim_ = std::vector<int>());
-    std::string aggregate1DtoNDString(const std::vector<int> &initvalVec, const std::vector<int> &arrayDim);
+    std::string aggregate1DtoNDString(const std::vector<int> &initvalVec,
+                                      const std::vector<int> &arrayDim);
 };
 
 #endif // !_IRBUILDER_HPP_

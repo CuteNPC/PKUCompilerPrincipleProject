@@ -2,21 +2,22 @@
 #define _RISCV_BUILDER_
 
 #include "koopa.h"
+#include <iostream>
 #include <string>
-#include "irreader.hpp"
 
-class RISCVBuilder
+typedef koopa_raw_program_t KoopaRaw;
+
+class RiscvBuilder
 {
-private:
-    koopa_raw_program_t program;
-    std::string outString;
-    IRReader irreader;
 
-public:
-    RISCVBuilder();
-    RISCVBuilder(koopa_raw_program_t program);
-    void build(koopa_raw_program_t program);
-    std::string outputString();
+  private:
+    KoopaRaw *raw;
+
+  public:
+    RiscvBuilder();
+    void buildFrom(KoopaRaw *program);
+    void dump(std::ostream &outStream = std::cout) const;
+    friend std::ostream &operator<<(std::ostream &outStream, const RiscvBuilder &builder);
 };
 
 #endif // !_RISCV_BUILDER_

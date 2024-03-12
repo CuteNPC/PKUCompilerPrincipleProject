@@ -10,10 +10,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/compiler",
             "args": [
-                "-koopa",
-                "testcases/perf/15_transpose0.c",
+                "-riscv",
+                "testcases/lv1/0_main.c",
                 "-o",
-                "temp/koopa.txt"
+                "temp/riscv.txt"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

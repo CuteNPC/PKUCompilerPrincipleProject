@@ -1,26 +1,25 @@
 #include "riscvbuilder.hpp"
+#include <cassert>
 
-const static char emptyMainSysYAsmString[] = "  .text\n  .globl %s\n%s:\n  li a0, %d\n  ret\n";
+const static char emptyMainSysYAsmString[] = "  .text\n  .globl main\nmain:\n  li a0, 0\n  ret\n";
 
-RISCVBuilder::RISCVBuilder()
+RiscvBuilder::RiscvBuilder() : raw(NULL) {}
+
+void RiscvBuilder::buildFrom(KoopaRaw *raw_)
 {
+    raw = raw_;
+    return;
+    return;
+    return;
 }
 
-RISCVBuilder::RISCVBuilder(koopa_raw_program_t program_)
+void RiscvBuilder::dump(std::ostream &outStream) const
 {
-    build(program_);
+    outStream << emptyMainSysYAsmString << std::endl;
 }
-void RISCVBuilder::build(koopa_raw_program_t program_)
-{
-    program = program_;
 
-    irreader.Visit(program);
-}
-std::string RISCVBuilder::outputString()
+std::ostream &operator<<(std::ostream &outStream, const RiscvBuilder &builder)
 {
-    char buffer[0x100];
-    sprintf(buffer, emptyMainSysYAsmString, irreader.funName.c_str(),
-            irreader.funName.c_str(), irreader.returnValue);
-    outString = buffer;
-    return outString;
+    builder.dump(outStream);
+    return outStream;
 }

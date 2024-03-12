@@ -4,7 +4,7 @@
 #include "keyword.hpp"
 #include <iostream>
 #include <map>
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -42,7 +42,7 @@ class SymbolEntry
     bool isConst() const;
     bool isFuncPara() const;
     bool isEmptyStartArray() const;
-    void Dump(std::ostream &outStream = std::cout) const;
+    void dump(std::ostream &outStream = std::cout) const;
     std::string getIRVarName(bool isParamEnd = false) const;
     friend std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &ast);
 };
@@ -70,7 +70,7 @@ class SymbolTable
     void buildFrom(CompUnitAST *ast);
     void resetCursor();
     bool funcRetVoid(std::string funcName);
-    void Dump(std::ostream &outStream = std::cout) const;
+    void dump(std::ostream &outStream = std::cout) const;
     friend std::ostream &operator<<(std::ostream &outStream, const SymbolTable &ast);
 };
 

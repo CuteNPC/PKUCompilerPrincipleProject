@@ -13,7 +13,7 @@ IRBlock::IRBlock(std::string blockName_, bool deadBlock_, std::vector<std::strin
 {
 }
 
-void IRBlock::Dump(std::ostream &outStream) const
+void IRBlock::dump(std::ostream &outStream) const
 {
     outStream << "  " << blockName << ':' << std::endl;
     for (const std::string &elem : stmtVec)
@@ -23,7 +23,7 @@ void IRBlock::Dump(std::ostream &outStream) const
 
 std::ostream &operator<<(std::ostream &outStream, const IRBlock &block)
 {
-    block.Dump(outStream);
+    block.dump(outStream);
     return outStream;
 }
 
@@ -37,7 +37,7 @@ IRFunction::IRFunction(std::string funcName_, std::string inputType_, std::strin
 {
 }
 
-void IRFunction::Dump(std::ostream &outStream) const
+void IRFunction::dump(std::ostream &outStream) const
 {
     outStream << "fun @" << funcName << '(' << inputType << ')' << outputType << std::endl;
     outStream << "{" << std::endl;
@@ -50,7 +50,7 @@ void IRFunction::Dump(std::ostream &outStream) const
 
 std::ostream &operator<<(std::ostream &outStream, const IRFunction &func)
 {
-    func.Dump(outStream);
+    func.dump(outStream);
     return outStream;
 }
 
@@ -68,7 +68,7 @@ void IRBuilder::buildFrom(CompUnitAST *ast, SymbolTable *symTab)
     symTab->resetCursor();
 }
 
-void IRBuilder::Dump(std::ostream &outStream) const
+void IRBuilder::dump(std::ostream &outStream) const
 {
     for (auto p = libFuncDecl; (*p)[0]; p++)
         outStream << "decl @" << (*p)[0] << '(' << (*p)[1] << ')' << (*p)[2] << std::endl;
@@ -222,7 +222,7 @@ std::string IRBuilder::aggregate1DtoNDString(const std::vector<int> &initvalVec,
 
 std::ostream &operator<<(std::ostream &outStream, const IRBuilder &build)
 {
-    build.Dump(outStream);
+    build.dump(outStream);
     return outStream;
 }
 

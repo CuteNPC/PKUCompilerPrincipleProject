@@ -1,6 +1,6 @@
 #include "symtab.hpp"
 #include "ast.hpp"
-#include <assert.h>
+#include <cassert>
 
 /* SymbolEntry */
 
@@ -37,7 +37,7 @@ bool SymbolEntry::isEmptyStartArray() const
     return (arrayDimVec.front() == -1);
 }
 
-void SymbolEntry::Dump(std::ostream &outStream) const
+void SymbolEntry::dump(std::ostream &outStream) const
 {
     outStream << "    "
               << "Defi : " << defiName[defi] << std::endl;
@@ -93,7 +93,7 @@ std::string SymbolEntry::getIRVarName(bool isParamEnd) const
 
 std::ostream &operator<<(std::ostream &outStream, const SymbolEntry &entry)
 {
-    entry.Dump(outStream);
+    entry.dump(outStream);
     return outStream;
 }
 
@@ -184,14 +184,14 @@ void SymbolTable::buildFrom(CompUnitAST *ast)
     resetCursor();
 }
 
-void SymbolTable::Dump(std::ostream &outStream) const
+void SymbolTable::dump(std::ostream &outStream) const
 {
     outStream << "SymbolTable: " << std::endl;
     int cnt = 0;
     for (SymbolEntry *elem : symVec)
     {
         outStream << cnt << std::endl;
-        elem->Dump(outStream);
+        elem->dump(outStream);
         cnt++;
     }
 }
@@ -207,7 +207,7 @@ bool SymbolTable::funcRetVoid(std::string funcName_)
 
 std::ostream &operator<<(std::ostream &outStream, const SymbolTable &symTab)
 {
-    symTab.Dump(outStream);
+    symTab.dump(outStream);
     return outStream;
 }
 

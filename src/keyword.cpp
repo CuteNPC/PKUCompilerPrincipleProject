@@ -1,4 +1,4 @@
-#include <stddef.h>
+#include <cstddef>
 
 const char *defiName[] = {"NONE", "Var", "Const", "LVal"};
 const char *typeName[] = {"NONE", "void", "int", "const"};

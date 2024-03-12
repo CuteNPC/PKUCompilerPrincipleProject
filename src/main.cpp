@@ -3,27 +3,16 @@
 #include "define.hpp"
 #include "irbuilder.hpp"
 #include "koopa.h"
+#include "koopaparser.hpp"
+#include "riscvbuilder.hpp"
 #include "symtab.hpp"
 #include "yy.hpp"
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #define MYDEBUG
-
-#ifdef MYDEBUG
-
-std::ofstream astInfoFile1("temp/ast1.txt");
-std::ofstream symInfoFile("temp/sym.txt");
-std::ofstream astInfoFile2("temp/ast2.txt");
-
-#else
-
-std::ofstream astInfoFile1("/dev/null");
-std::ofstream symInfoFile("/dev/null");
-std::ofstream astInfoFile2("/dev/null");
-
-#endif
 
 int main(int argc, const char *argv[])
 {
@@ -31,21 +20,34 @@ int main(int argc, const char *argv[])
 
     CompUnitAST *ast = yyparse(args.inputFile());
 
-    astInfoFile1 << *ast << std::endl;
-
     SymbolTable *symTab = new SymbolTable();
-
     symTab->buildFrom(ast);
 
-    symInfoFile << *symTab << std::endl;
-
-    astInfoFile2 << *ast << std::endl;
-
     IRBuilder *irBuilder = new IRBuilder();
-
     irBuilder->buildFrom(ast, symTab);
 
-    args.ostream() << *irBuilder << std::endl;
+    if (args.toKoopa())
+    {
+        args.ostream() << *irBuilder << std::endl;
+        return 0;
+    }
+
+    std::stringstream koopaIRStream;
+    koopaIRStream << *irBuilder << std::endl;
+    std::string koopaIRString = koopaIRStream.str();
+
+#ifdef MYDEBUG
+    std::ofstream koopaOut("temp/koopa.txt");
+    koopaOut << koopaIRString << std::endl;
+    koopaOut.close();
+#endif
+
+    KoopaParser koopaParser(koopaIRString);
+
+    RiscvBuilder *riscvBuilder = new RiscvBuilder();
+    riscvBuilder->buildFrom(koopaParser.getRaw());
+
+    args.ostream() << *riscvBuilder << std::endl;
 
     return 0;
 }
