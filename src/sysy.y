@@ -60,7 +60,7 @@ std::string mvStr(std::string* str);
 %type <FuncDefAST_ast_val>       FuncDef
 %type <BlockAST_ast_val>         Block BlockRaw
 %type <BlockItemAST_ast_val>     BlockItem
-%type <StmtAST_ast_val>          Stmt
+%type <StmtAST_ast_val>          NoIfStmt WithElseStmt Stmt
 %type <ExpAST_ast_val>           Exp LOrExp LAndExp EqExp RelExp AddExp MulExp UnaryExp 
 %type <ExpAST_ast_val>           ConstExp
 %type <PrimaryExpAST_ast_val>    PrimaryExp
@@ -101,18 +101,25 @@ BlockItem:
   Decl { $$ = new BlockItemAST($1); }|
   Stmt { $$ = new BlockItemAST($1); };
 
-Stmt:
+NoIfStmt:
   Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_EMPTY); }|
   LVal Y_CTRL_EQUAL Exp Y_ST_SE { $$ = new StmtAST($1, $3); }|
   Exp Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_EXP, $1); }|
   Y_CTRL_RETURN Exp Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_RET_INT, $2); }|
   Y_CTRL_RETURN Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_RET_VOID); }|
   Block { $$ = new StmtAST($1); }|
-  Y_CTRL_IF Y_ST_PL Exp Y_ST_PR Stmt { $$ = new StmtAST(StmtEnum::STMT_IF, $3, $5); }|
-  Y_CTRL_IF Y_ST_PL Exp Y_ST_PR Stmt Y_CTRL_ELSE Stmt { $$ = new StmtAST(StmtEnum::STMT_IF_ELSE, $3, $5, $7); }|
   Y_CTRL_WHILE Y_ST_PL Exp Y_ST_PR Stmt { $$ = new StmtAST(StmtEnum::STMT_WHILE, $3, $5); }|
   Y_CTRL_BREAK Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_BREAK); }|
-  Y_CTRL_CONTINUE Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_CONT); } ;
+  Y_CTRL_CONTINUE Y_ST_SE { $$ = new StmtAST(StmtEnum::STMT_CONT); };
+
+WithElseStmt:
+  Y_CTRL_IF Y_ST_PL Exp Y_ST_PR WithElseStmt Y_CTRL_ELSE WithElseStmt { $$ = new StmtAST(StmtEnum::STMT_IF_ELSE, $3, $5, $7); }|
+  NoIfStmt {$$ = $1; };
+
+Stmt:
+  Y_CTRL_IF Y_ST_PL Exp Y_ST_PR Stmt { $$ = new StmtAST(StmtEnum::STMT_IF, $3, $5); }|
+  Y_CTRL_IF Y_ST_PL Exp Y_ST_PR WithElseStmt Y_CTRL_ELSE Stmt { $$ = new StmtAST(StmtEnum::STMT_IF_ELSE, $3, $5, $7); }|
+  NoIfStmt {$$ = $1; };
 
 ConstExp:
   Exp {$$ = $1;};
