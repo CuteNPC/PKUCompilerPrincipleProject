@@ -3,3 +3,5 @@ build/**
 testcases
 temp
 TODO.md
+.vscode
+runtest.sh

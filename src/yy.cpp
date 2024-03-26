@@ -11,6 +11,9 @@ CompUnitAST *yyparse(FILE *file)
     yyin = file;
     int ret = yyparse(ast);
     if (ret)
+    {
         std::cerr << "yyparse error" << std::endl;
+        exit(-1);
+    }
     return ast;
 }
