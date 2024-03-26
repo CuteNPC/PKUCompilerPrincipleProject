@@ -468,7 +468,15 @@ void RiscvBuilder::pushAInst(const std::vector<std::string> &ainstVec)
 
 void RiscvBuilder::pushEmpty() { instVec.push_back(std::string()); }
 
-void RiscvBuilder::pushVarIndex(std::string name) { varTable.push_back(name); }
+void RiscvBuilder::pushVarIndex(std::string name)
+{
+    static int count = 0;
+    int value = varTable.size();
+    if (varTable.find(name) != varTable.end())
+        varTable["+-*/" + name + std::to_string(count++)] = value;
+    else
+        varTable[name] = value;
+}
 
 void RiscvBuilder::pushVarIndex(const char *name) { pushVarIndex(std::string(name ? name : "")); }
 
@@ -476,11 +484,9 @@ void RiscvBuilder::pushVarIndex() { pushVarIndex(std::string()); }
 
 int RiscvBuilder::matchVarIndex(std::string name)
 {
-    int len = varTable.size();
-    for (int i = 0; i < len; i++)
-        if (varTable[i] == name)
-            return i;
-    return -1;
+    if (varTable.find(name) == varTable.end())
+        return -1;
+    return varTable[name];
 }
 
 int RiscvBuilder::matchVarIndex(const char *name) { return matchVarIndex(std::string(name)); }

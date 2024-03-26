@@ -19,7 +19,7 @@ class RiscvBuilder
 
     int currentCommandIndex;
     int currentAllocedCount;
-    std::vector<std::string> varTable;
+    std::map<std::string, int> varTable;
 
     std::vector<std::string> instVec;
 
