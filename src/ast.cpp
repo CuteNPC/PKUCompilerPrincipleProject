@@ -174,12 +174,13 @@ void FuncDefAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab)
 
     irBuilder->startFunc(funcName, inputType, outputType);
     funcBody->buildIR(irBuilder, symTab);
-    if (funcType == TypeEnum::TYPE_VOID)
-    {
-        std::string stmt = std::string("ret");
-        irBuilder->pushStmt(stmt);
-        irBuilder->pushAndGetBlock(true);
-    }
+
+    std::string stmt = std::string("ret");
+    if (funcType == TypeEnum::TYPE_INT)
+        stmt += " 0";
+    irBuilder->pushStmt(stmt);
+    irBuilder->pushAndGetBlock(true);
+
     irBuilder->endFunc();
 
     symTab->currentFuncName.clear();
