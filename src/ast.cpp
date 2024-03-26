@@ -875,9 +875,19 @@ void ExpAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}
 
 std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
 {
-    std::string left, left2, right, right2, resPtr, res, stmt;
+    static const int bufferSize = 32;
+    std::string *stringBuffer = new std::string[bufferSize];
+    std::string &left = stringBuffer[0];
+    std::string &left2 = stringBuffer[1];
+    std::string &right = stringBuffer[2];
+    std::string &right2 = stringBuffer[3];
+    std::string &resPtr = stringBuffer[4];
+    std::string &res = stringBuffer[5];
+    std::string &stmt = stringBuffer[6];
+    std::string &thenName = stringBuffer[7];
+    std::string &endName = stringBuffer[8];
+
     IRBlock *entryBlock, *thenBlock;
-    std::string thenName, endName;
 
     switch (opt)
     {
@@ -888,128 +898,44 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         res = rightExp->buildIRRetString(irBuilder, symTab);
         break;
     case OpEnum::OP_NEG:
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = sub 0, ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_NOT_B:
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = xor -1, ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_NOT_L:
         right = rightExp->buildIRRetString(irBuilder, symTab);
         res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = eq 0, ") + right;
+        stmt.append(res).append(" = ").append(riscvInst[opt]).append(", ").append(right);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
         break;
     case OpEnum::OP_E:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = eq ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_NE:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = ne ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_L:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = lt ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_LE:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = le ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_G:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = gt ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_GE:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = ge ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_ADD:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = add ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_SUB:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = sub ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_MUL:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = mul ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_DIV:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = div ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_MOD:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = mod ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_AND_B:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = and ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_OR_B:
-        left = leftExp->buildIRRetString(irBuilder, symTab);
-        right = rightExp->buildIRRetString(irBuilder, symTab);
-        res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = or ") + left + std::string(", ") + right;
-        irBuilder->pushStmt(stmt);
-        break;
     case OpEnum::OP_XOR_B:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
         res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = xor ") + left + std::string(", ") + right;
+        stmt.append(res).append(" = ").append(riscvInst[opt]).append(" ").append(left).append(", ").append(right);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
         break;
     case OpEnum::OP_AND_L:
         left = leftExp->buildIRRetString(irBuilder, symTab);
         resPtr = irBuilder->getNextVarIdent();
-        stmt = resPtr + std::string(" = alloc i32");
+        stmt.append(resPtr).append(" = alloc i32");
         irBuilder->pushStmt(stmt);
-        stmt = std::string("store 0, ") + resPtr;
+        stmt.clear();
+        stmt.append("store 0, ").append(resPtr);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
         entryBlock = irBuilder->currentBlock;
 
         irBuilder->pushAndGetBlock();
@@ -1017,18 +943,21 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
 
         right2 = rightExp->buildIRRetString(irBuilder, symTab);
         right = irBuilder->getNextVarIdent();
-        stmt = right + std::string(" = ne 0, ") + right2;
+        stmt.append(right).append(" = ne 0, ").append(right2);
         irBuilder->pushStmt(stmt);
-        stmt = std::string("store ") + right + std::string(", ") + resPtr;
+        stmt.clear();
+        stmt.append("store ").append(right).append(", ").append(resPtr);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
         thenBlock = irBuilder->currentBlock;
 
         irBuilder->pushAndGetBlock();
         endName = irBuilder->currentBlock->blockName;
 
         res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = load ") + resPtr;
+        stmt.append(res).append(" = load ").append(resPtr);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
 
         irBuilder->connectIf(left, entryBlock, thenName, thenBlock, endName);
         break;
@@ -1036,13 +965,16 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         /*TODO 其他实现？*/
         left2 = leftExp->buildIRRetString(irBuilder, symTab);
         left = irBuilder->getNextVarIdent();
-        stmt = left + std::string(" = eq 0, ") + left2;
+        stmt.append(left).append(" = eq 0, ").append(left2);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
         resPtr = irBuilder->getNextVarIdent();
-        stmt = resPtr + std::string(" = alloc i32");
+        stmt.append(resPtr).append(" = alloc i32");
         irBuilder->pushStmt(stmt);
-        stmt = std::string("store 1, ") + resPtr;
+        stmt.clear();
+        stmt.append("store 1, ").append(resPtr);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
         entryBlock = irBuilder->currentBlock;
 
         irBuilder->pushAndGetBlock();
@@ -1050,18 +982,21 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
 
         right2 = rightExp->buildIRRetString(irBuilder, symTab);
         right = irBuilder->getNextVarIdent();
-        stmt = right + std::string(" = ne 0, ") + right2;
+        stmt.append(right).append(" = ne 0, ").append(right2);
         irBuilder->pushStmt(stmt);
-        stmt = std::string("store ") + right + std::string(", ") + resPtr;
+        stmt.clear();
+        stmt.append("store ").append(right).append(", ").append(resPtr);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
         thenBlock = irBuilder->currentBlock;
 
         irBuilder->pushAndGetBlock();
         endName = irBuilder->currentBlock->blockName;
 
         res = irBuilder->getNextVarIdent();
-        stmt = res + std::string(" = load ") + resPtr;
+        stmt.append(res).append(" = load ").append(resPtr);
         irBuilder->pushStmt(stmt);
+        stmt.clear();
 
         irBuilder->connectIf(left, entryBlock, thenName, thenBlock, endName);
         break;
@@ -1070,7 +1005,9 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         break;
     }
 
-    return res;
+    std::string ans = res;
+    delete[] stringBuffer;
+    return ans;
 }
 
 /* PrimaryExpAST */
@@ -1468,19 +1405,20 @@ std::string FuncRParamsAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *
 /* DataLValIdentAST */
 
 DataLValIdentAST::DataLValIdentAST()
-    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(), emptyValStart(false), expVec()
+    : defi(DefiEnum::DEFI_NONE), type(TypeEnum::TYPE_NONE), ident(), emptyValStart(false), expVec(),
+      relaSym(NULL)
 {
 }
 
 DataLValIdentAST::DataLValIdentAST(DefiEnum defi_, TypeEnum type_, std::string ident_,
                                    bool emptyValStart)
-    : defi(defi_), type(type_), ident(ident_), emptyValStart(emptyValStart), expVec()
+    : defi(defi_), type(type_), ident(ident_), emptyValStart(emptyValStart), expVec(), relaSym(NULL)
 {
 }
 
 DataLValIdentAST::DataLValIdentAST(DefiEnum defi_, TypeEnum type_, const char *ident_,
                                    bool emptyValStart)
-    : defi(defi_), type(type_), ident(ident_), emptyValStart(emptyValStart), expVec()
+    : defi(defi_), type(type_), ident(ident_), emptyValStart(emptyValStart), expVec(), relaSym(NULL)
 {
 }
 

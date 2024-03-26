@@ -5,6 +5,7 @@ extern const char *defiName[];
 extern const char *typeName[];
 extern const char *optName[];
 extern const char *libFuncDecl[][3];
+extern const char *riscvInst[];
 
 enum OpEnum
 {
