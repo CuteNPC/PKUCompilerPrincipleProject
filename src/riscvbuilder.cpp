@@ -227,7 +227,9 @@ void RiscvBuilder::visitStmt(const koopa_raw_value_t &stmt)
         pushCment("KOOPA_RVT_ALLOC");
         pushAInst("li t1, " + std::to_string((currentAllocedCount + funcCommandCount) * 4));
         pushAInst("add t0, sp, t1");
-        pushAInst("sw t0, " + std::to_string(currentCommandIndex * 4) + "(sp)");
+        pushAInst("li t3, " + std::to_string(currentCommandIndex * 4));
+        pushAInst("add t2, sp, t3");
+        pushAInst("sw t0, 0(t2)");
         currentAllocedCount += funcAllocArray[currentCommandIndex];
     }
     break;
@@ -359,7 +361,9 @@ void RiscvBuilder::visitStmt(const koopa_raw_value_t &stmt)
         for (int i = argsCountInReg; i < argLength; i++)
         {
             pushAInst(loadValue((koopa_raw_value_t)(call.args.buffer[i]), "t0"));
-            pushAInst("sw t0, " + std::to_string((i - argLength) * 4) + "(sp)");
+            pushAInst("li t1, " + std::to_string((i - argLength) * 4));
+            pushAInst("add t1, sp, t1");
+            pushAInst("sw t0, 0(t1)");
         }
 
         /*分配栈上参数空间*/
@@ -421,7 +425,11 @@ std::vector<std::string> RiscvBuilder::loadValue(const koopa_raw_value_t &value,
     {
         int index = matchVarIndex(value->name);
         if (index != -1)
-            vec.push_back("lw " + dist + ", " + std::to_string(index * 4) + "(sp)");
+        {
+            vec.push_back("li t5, " + std::to_string(index * 4));
+            vec.push_back(std::string("add t5, t5, sp"));
+            vec.push_back("lw " + dist + ", 0(t5)");
+        }
         else
             vec.push_back("la " + dist + ", " + (value->name + 1));
     }
@@ -435,13 +443,23 @@ std::vector<std::string> RiscvBuilder::loadValue(const koopa_raw_value_t &value,
     return vec;
 }
 
-std::string RiscvBuilder::storeValue(const koopa_raw_value_t &value, const char *distReg)
+std::vector<std::string> RiscvBuilder::storeValue(const koopa_raw_value_t &value,
+                                                  const char *distReg)
 {
     std::string dist(distReg);
+    std::vector<std::string> vec;
     if (value->name)
-        return ("sw " + dist + ", " + std::to_string(matchVarIndex(value->name) * 4) + "(sp)");
-    assert(false);
-    return std::string("error");
+    {
+        vec.push_back("li t5, " + std::to_string(matchVarIndex(value->name) * 4));
+        vec.push_back(std::string("add t5, t5, sp"));
+        vec.push_back("sw " + dist + ", 0(t5)");
+    }
+    else
+    {
+        assert(false);
+        vec.push_back(std::string("error"));
+    }
+    return vec;
 }
 
 void RiscvBuilder::pushAInst(std::string ainst) { instVec.push_back("    " + ainst); }
@@ -463,7 +481,7 @@ void RiscvBuilder::pushCment(const char *cment) { pushCment(std::string(cment));
 void RiscvBuilder::pushAInst(const std::vector<std::string> &ainstVec)
 {
     for (const std::string &ainst : ainstVec)
-        instVec.push_back("    " + ainst);
+        pushAInst(ainst);
 }
 
 void RiscvBuilder::pushEmpty() { instVec.push_back(std::string()); }
