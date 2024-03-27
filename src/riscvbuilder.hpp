@@ -38,6 +38,7 @@ class RiscvBuilder
     void countStmt(const koopa_raw_value_t &stmt);
     void visitStmt(const koopa_raw_value_t &stmt);
 
+    bool validOffset(int offset);
     std::vector<std::string> loadValue(const koopa_raw_value_t &value, const char *distReg);
     std::vector<std::string> storeValue(const koopa_raw_value_t &value, const char *distReg);
 

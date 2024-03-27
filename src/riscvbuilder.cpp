@@ -328,9 +328,9 @@ void RiscvBuilder::visitStmt(const koopa_raw_value_t &stmt)
 
         const koopa_raw_branch_t &branch = stmt->kind.data.branch;
         pushAInst(loadValue(branch.cond, "t0"));
-        std::string str = " t0, BLOCK_" + std::to_string(funcCount) + "_";
-        pushAInst("bnez" + str + (branch.true_bb->name + 1));
-        pushAInst("beqz" + str + (branch.false_bb->name + 1));
+        pushAInst("beqz t0, 0x8");
+        pushAInst("j BLOCK_" + std::to_string(funcCount) + "_" + (branch.true_bb->name + 1));
+        pushAInst("j BLOCK_" + std::to_string(funcCount) + "_" + (branch.false_bb->name + 1));
     }
     break;
     case KOOPA_RVT_JUMP:
@@ -416,9 +416,15 @@ std::vector<std::string> RiscvBuilder::loadValue(const koopa_raw_value_t &value,
             vec.push_back("mv " + dist + ", " + argReg[index]);
         else
         {
-            vec.push_back("li t5, " + std::to_string((mem4Byte + index - argsCountInReg) * 4));
-            vec.push_back(std::string("add t5, t5, sp"));
-            vec.push_back("lw " + dist + ", 0(t5)");
+            int offset = (mem4Byte + index - argsCountInReg) * 4;
+            if (validOffset(offset))
+                vec.push_back("lw " + dist + ", " + std::to_string(offset) + "(sp)");
+            else
+            {
+                vec.push_back("li t5, " + std::to_string(offset));
+                vec.push_back(std::string("add t5, t5, sp"));
+                vec.push_back("lw " + dist + ", 0(t5)");
+            }
         }
     }
     else if (value->name)
@@ -426,9 +432,15 @@ std::vector<std::string> RiscvBuilder::loadValue(const koopa_raw_value_t &value,
         int index = matchVarIndex(value->name);
         if (index != -1)
         {
-            vec.push_back("li t5, " + std::to_string(index * 4));
-            vec.push_back(std::string("add t5, t5, sp"));
-            vec.push_back("lw " + dist + ", 0(t5)");
+            int offset = index * 4;
+            if (validOffset(offset))
+                vec.push_back("lw " + dist + ", " + std::to_string(offset) + "(sp)");
+            else
+            {
+                vec.push_back("li t5, " + std::to_string(offset));
+                vec.push_back(std::string("add t5, t5, sp"));
+                vec.push_back("lw " + dist + ", 0(t5)");
+            }
         }
         else
             vec.push_back("la " + dist + ", " + (value->name + 1));
@@ -443,6 +455,12 @@ std::vector<std::string> RiscvBuilder::loadValue(const koopa_raw_value_t &value,
     return vec;
 }
 
+bool RiscvBuilder::validOffset(int offset)
+{
+    static const int maxOffset = (1 << 11);
+    return (-maxOffset <= offset) && (offset < maxOffset);
+}
+
 std::vector<std::string> RiscvBuilder::storeValue(const koopa_raw_value_t &value,
                                                   const char *distReg)
 {
@@ -450,9 +468,15 @@ std::vector<std::string> RiscvBuilder::storeValue(const koopa_raw_value_t &value
     std::vector<std::string> vec;
     if (value->name)
     {
-        vec.push_back("li t5, " + std::to_string(matchVarIndex(value->name) * 4));
-        vec.push_back(std::string("add t5, t5, sp"));
-        vec.push_back("sw " + dist + ", 0(t5)");
+        int offset = matchVarIndex(value->name) * 4;
+        if (validOffset(offset))
+            vec.push_back("sw " + dist + ", " + std::to_string(offset) + "(sp)");
+        else
+        {
+            vec.push_back("li t5, " + std::to_string(offset));
+            vec.push_back(std::string("add t5, t5, sp"));
+            vec.push_back("sw " + dist + ", 0(t5)");
+        }
     }
     else
     {
