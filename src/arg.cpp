@@ -10,9 +10,20 @@ Arg::Arg(int argc, const char *argv[])
     }
     std::string compilerMode = argv[1];
     if (compilerMode == "-koopa")
+    {
         _toRiscv = false;
+        _isPerf = false;
+    }
     else if (compilerMode == "-riscv")
+    {
         _toRiscv = true;
+        _isPerf = false;
+    }
+    else if (compilerMode == "-perf")
+    {
+        _toRiscv = true;
+        _isPerf = true;
+    }
     else
     {
         std::cerr << "Error compiler mode" << std::endl;
@@ -51,6 +62,8 @@ std::ostream &Arg::ostream() const { return *_ostreamPtr; }
 bool Arg::toRiscv() const { return _toRiscv; }
 
 bool Arg::toKoopa() const { return !_toRiscv; }
+
+bool Arg::isPerf() const { return _isPerf; }
 
 Arg::~Arg()
 {

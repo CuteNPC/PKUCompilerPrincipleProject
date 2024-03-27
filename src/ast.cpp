@@ -3,6 +3,7 @@
 #include "irbuilder.hpp"
 #include "symtab.hpp"
 #include <cassert>
+#include <functional>
 #include <iomanip>
 
 /* Indent */
@@ -923,7 +924,8 @@ std::string ExpAST::buildIRRetString(IRBuilder *irBuilder, SymbolTable *symTab)
         left = leftExp->buildIRRetString(irBuilder, symTab);
         right = rightExp->buildIRRetString(irBuilder, symTab);
         res = irBuilder->getNextVarIdent();
-        stmt.append(res).append(" = ").append(riscvInst[opt]).append(" ").append(left).append(", ").append(right);
+        stmt.append(res).append(" = ").append(riscvInst[opt]);
+        stmt.append(" ").append(left).append(", ").append(right);
         irBuilder->pushStmt(stmt);
         stmt.clear();
         break;
@@ -1492,7 +1494,7 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
         std::string last;
         if (!relaSym->isFuncPara())
         {
-            /* TODO 普通数组 */
+            /* 普通数组 */
             std::string next, stmt;
             last = relaSym->getIRVarName();
             for (auto exp : expVec)
@@ -1506,7 +1508,7 @@ std::string DataLValIdentAST::buildIRRetValue(IRBuilder *irBuilder, SymbolTable 
         }
         else
         {
-            /* TODO 数组参数 */
+            /* 数组参数 */
             std::string next, stmt, expRes;
             last = relaSym->getIRVarName();
             next = irBuilder->getNextVarIdent();
@@ -1558,7 +1560,7 @@ std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *
     }
     else if (!relaSym->isFuncPara())
     {
-        /* TODO 普通数组 */
+        /* 普通数组 */
         std::string last = relaSym->getIRVarName(), next, stmt;
         for (auto exp : expVec)
         {
@@ -1572,7 +1574,7 @@ std::string DataLValIdentAST::buildIRRetAddr(IRBuilder *irBuilder, SymbolTable *
     }
     else
     {
-        /* TODO 数组参数 */
+        /* 数组参数 */
         std::string last = relaSym->getIRVarName(), next, stmt, expRes;
         next = irBuilder->getNextVarIdent();
         stmt = next + " = load " + last;
@@ -1646,27 +1648,77 @@ void DataInitvalAST::setSymbolTable(SymbolTable *symTab) {}
 
 std::vector<int> DataInitvalAST::getInitVector(std::vector<int> arrayDim, SymbolTable *symTab)
 {
-    /* TODO 数组初始化*/
-    int cum = 1;
-    for (auto e : arrayDim)
-        cum *= e;
-    std::vector<int> vec;
-    dfs(vec, symTab);
-    int len = vec.size();
-    for (int i = len; i < cum; i++)
-        vec.push_back(0);
-    for (int i = cum; i < len; i++)
-        vec.pop_back();
-    return vec;
-}
+    std::function<int(const std::vector<int> &)> arrayCumFunc =
+        [](const std::vector<int> &arrayDim) -> int
+    {
+        int cum = 1;
+        for (auto e : arrayDim)
+            cum *= e;
+        return cum;
+    };
 
-void DataInitvalAST::dfs(std::vector<int> &vec, SymbolTable *symTab)
-{
-    if (exp)
-        vec.push_back(exp->forceCalc(symTab));
+    std::function<std::vector<int>(int, std::vector<int>)> getNextEdge =
+        [](int currentSize, std::vector<int> arrayDim) -> std::vector<int>
+    {
+        std::vector<int> nextArrayDimR;
+        int cum = 1;
+        for (auto iter = arrayDim.rbegin(); iter != arrayDim.rend() - 1; iter++)
+        {
+            int num = (*iter);
+            cum *= num;
+            if (currentSize % cum != 0)
+                break;
+            nextArrayDimR.push_back(num);
+        }
+        std::vector<int> nextArrayDim;
+        for (auto iter = nextArrayDimR.rbegin(); iter != nextArrayDimR.rend(); iter++)
+            nextArrayDim.push_back((*iter));
+        return nextArrayDim;
+    };
+
+    std::function<std::vector<int>(const std::vector<DataInitvalAST *> &, std::vector<int>)>
+        dfsFunc = [symTab, &dfsFunc, &getNextEdge,
+                   &arrayCumFunc](const std::vector<DataInitvalAST *> &initVec,
+                                  std::vector<int> arrayDim) -> std::vector<int>
+    {
+        int cum = arrayCumFunc(arrayDim);
+        std::vector<int> retVec;
+        for (DataInitvalAST *astPtr : initVec)
+        {
+            if (astPtr->exp)
+            {
+                retVec.push_back(astPtr->exp->forceCalc(symTab));
+                continue;
+            }
+            /*检查当前对齐到了哪个边界*/
+            std::vector<int> nextArrayDim = getNextEdge(retVec.size(), arrayDim);
+            assert(nextArrayDim.size() != 0);
+            std::vector<int> newVec = dfsFunc(astPtr->initVec, nextArrayDim);
+            for (auto elem : newVec)
+                retVec.push_back(elem);
+        }
+        int len = retVec.size();
+        assert(len <= cum);
+        for (int i = len; i < cum; i++)
+            retVec.push_back(0);
+        return retVec;
+    };
+
+    std::vector<int> retVec;
+
+    int cum = arrayCumFunc(arrayDim);
+
+    if (this->exp)
+        retVec.push_back(this->exp->forceCalc(symTab));
     else
-        for (DataInitvalAST *e : initVec)
-            e->dfs(vec, symTab);
+        retVec = dfsFunc(this->initVec, arrayDim);
+
+    int len = retVec.size();
+    for (int i = len; i < cum; i++)
+        retVec.push_back(0);
+    for (int i = cum; i < len; i++)
+        retVec.pop_back();
+    return retVec;
 }
 
 void DataInitvalAST::buildIR(IRBuilder *irBuilder, SymbolTable *symTab) {}

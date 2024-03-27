@@ -9,6 +9,7 @@ class Arg
 {
   private:
     bool _toRiscv;
+    bool _isPerf;
     FILE *_inputFile;
     std::ostream *_ostreamPtr;
     std::ofstream _ostream;
@@ -18,6 +19,7 @@ class Arg
     FILE *inputFile() const;
     std::ostream &ostream() const;
     bool toRiscv() const;
+    bool isPerf() const;
     bool toKoopa() const;
     ~Arg();
 };

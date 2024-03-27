@@ -316,7 +316,6 @@ class DataInitvalAST : public BaseAST
     virtual const char *getClassName() const override;
     virtual void setSymbolTable(SymbolTable *symTab) override;
     std::vector<int> getInitVector(std::vector<int> arrayDim, SymbolTable *symTab = NULL);
-    void dfs(std::vector<int> &vec, SymbolTable *symTab = NULL);
     virtual void buildIR(IRBuilder *irBuilder, SymbolTable *symTab) override;
 };
 
